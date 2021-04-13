@@ -1,0 +1,816 @@
+[
+  {
+    "__type__": "cc.SpriteFrame",
+    "content": {
+      "name": "default_btn_disabled",
+      "texture": "71VhFCTINJM6/Ky3oX9nBT",
+      "rect": [
+        0,
+        0,
+        40,
+        40
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        40,
+        40
+      ],
+      "capInsets": [
+        12,
+        12,
+        12,
+        12
+      ]
+    }
+  },
+  {
+    "__type__": "cc.SpriteFrame",
+    "content": {
+      "name": "quit300x80",
+      "texture": "0a0tBgmtlLNZLdbvgcEDeu",
+      "rect": [
+        0,
+        0,
+        300,
+        80
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        300,
+        80
+      ],
+      "capInsets": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "__type__": "cc.EffectAsset",
+    "_name": "SpiralZoom",
+    "techniques": [
+      {
+        "passes": [
+          {
+            "blendState": {
+              "targets": [
+                {
+                  "blend": true
+                }
+              ]
+            },
+            "rasterizerState": {
+              "cullMode": 0
+            },
+            "properties": {
+              "texture": {
+                "value": "white",
+                "type": 29
+              },
+              "C": {
+                "value": [
+                  1,
+                  0
+                ],
+                "inspector": {
+                  "displayName": "指数"
+                },
+                "type": 14
+              },
+              "R": {
+                "value": [
+                  0.9
+                ],
+                "inspector": {
+                  "displayName": "圆半径"
+                },
+                "type": 13
+              },
+              "scale": {
+                "value": [
+                  2.5
+                ],
+                "inspector": {
+                  "displayName": "同心圆缩小系数"
+                },
+                "type": 13
+              },
+              "angle": {
+                "value": [
+                  0.13659
+                ],
+                "inspector": {
+                  "displayName": "同心圆旋转角(radius)"
+                },
+                "type": 13
+              },
+              "speed": {
+                "value": [
+                  1
+                ],
+                "inspector": {
+                  "displayName": "动画速度"
+                },
+                "type": 13
+              }
+            },
+            "program": "SpiralZoom|vs|fs"
+          }
+        ]
+      }
+    ],
+    "shaders": [
+      {
+        "hash": 3037095916,
+        "glsl3": {
+          "vert": "\nprecision highp float;\nuniform CCGlobal {\n  mat4 cc_matView;\n  mat4 cc_matViewInv;\n  mat4 cc_matProj;\n  mat4 cc_matProjInv;\n  mat4 cc_matViewProj;\n  mat4 cc_matViewProjInv;\n  vec4 cc_cameraPos;\n  vec4 cc_time;\n  mediump vec4 cc_screenSize;\n  mediump vec4 cc_screenScale;\n};\nuniform CCLocal {\n  mat4 cc_matWorld;\n  mat4 cc_matWorldIT;\n};\nin vec3 a_position;\nin vec2 a_uv0;\nout vec2 v_uv0;\nvoid main() {\n  vec4 pos = vec4(a_position, 1);\n  pos = cc_matViewProj * pos;\n  v_uv0 = a_uv0;\n  v_uv0.y = 1.0-v_uv0.y;\n  gl_Position = pos;\n}",
+          "frag": "\nprecision highp float;\nuniform CCGlobal {\n  mat4 cc_matView;\n  mat4 cc_matViewInv;\n  mat4 cc_matProj;\n  mat4 cc_matProjInv;\n  mat4 cc_matViewProj;\n  mat4 cc_matViewProjInv;\n  vec4 cc_cameraPos;\n  vec4 cc_time;\n  mediump vec4 cc_screenSize;\n  mediump vec4 cc_screenScale;\n};\nuniform CCLocal {\n  mat4 cc_matWorld;\n  mat4 cc_matWorldIT;\n};\nin vec2 v_uv0;\nuniform sampler2D texture;\nuniform FARGS {\n    vec2 C;\n    float R;\n    float scale;\n    float angle;\n    float speed;\n};\nfloat Circle(vec2 uv, vec2 o, float r, float blur) {\n    return smoothstep(0., blur, distance(uv, o) - r);\n}\nmat2 R2(float angle){\n    float c = cos(angle);\n    float s = sin(angle);\n    return mat2(c, -s, s, c);\n}\nvec2 ComplexPow(vec2 z, vec2 c) {\n    float zmod = sqrt(dot(z, z));\n    float t = atan(z.y, z.x);\n    float part1 = pow(zmod, c.x) * pow(2.718281828459045, -c.y*t);\n    float exp2 = log(zmod) * c.y;\n    vec2 part2 = vec2(cos(exp2), sin(exp2));\n    float exp3 = c.x * t;\n    vec2 part3 = vec2(cos(exp3), sin(exp3));\n    vec2 part2x3 = vec2(\n        part2.x * part3.x - part2.y * part3.y,\n        part2.x * part3.y + part2.y * part3.x);\n    return part1 * part2x3;\n}\nvoid main()\n{\n    vec2 uv = v_uv0.xy * 2. - 1.;\n    uv *= 0.5;\n    float zoom = pow(scale, fract(cc_time.x * speed));\n    uv /= zoom;\n    float loop = floor(cc_time.x * speed);\n    uv = R2(angle * loop) * uv;\n    vec2 origin = vec2(0.);\n    float r = R;\n    float blur = 0.01;\n    float mask = 1.0;\n    mat2 matR2 = R2(angle);\n    vec2 spiralUV = ComplexPow(uv, C);\n    vec3 finalColor = texture(texture, spiralUV * 0.5 + 0.5).rgb;\n    for (int i = 0; i < 6; ++i) {\n        uv = matR2 * uv * scale;\n        spiralUV = ComplexPow(uv, C);\n        float mask = Circle(spiralUV, origin, r, blur);\n        vec3 color = texture(texture, spiralUV * 0.5 + 0.5).rgb;\n        finalColor = mix(color, finalColor, mask);\n    }\n    gl_FragColor = vec4(finalColor, 1.0);\n}"
+        },
+        "glsl1": {
+          "vert": "\nprecision highp float;\nuniform mat4 cc_matViewProj;\nattribute vec3 a_position;\nattribute vec2 a_uv0;\nvarying vec2 v_uv0;\nvoid main() {\n  vec4 pos = vec4(a_position, 1);\n  pos = cc_matViewProj * pos;\n  v_uv0 = a_uv0;\n  v_uv0.y = 1.0-v_uv0.y;\n  gl_Position = pos;\n}",
+          "frag": "\nprecision highp float;\nuniform vec4 cc_time;\nvarying vec2 v_uv0;\nuniform sampler2D texture;\nuniform vec2 C;\nuniform float R;\nuniform float scale;\nuniform float angle;\nuniform float speed;\nfloat Circle(vec2 uv, vec2 o, float r, float blur) {\n    return smoothstep(0., blur, distance(uv, o) - r);\n}\nmat2 R2(float angle){\n    float c = cos(angle);\n    float s = sin(angle);\n    return mat2(c, -s, s, c);\n}\nvec2 ComplexPow(vec2 z, vec2 c) {\n    float zmod = sqrt(dot(z, z));\n    float t = atan(z.y, z.x);\n    float part1 = pow(zmod, c.x) * pow(2.718281828459045, -c.y*t);\n    float exp2 = log(zmod) * c.y;\n    vec2 part2 = vec2(cos(exp2), sin(exp2));\n    float exp3 = c.x * t;\n    vec2 part3 = vec2(cos(exp3), sin(exp3));\n    vec2 part2x3 = vec2(\n        part2.x * part3.x - part2.y * part3.y,\n        part2.x * part3.y + part2.y * part3.x);\n    return part1 * part2x3;\n}\nvoid main()\n{\n    vec2 uv = v_uv0.xy * 2. - 1.;\n    uv *= 0.5;\n    float zoom = pow(scale, fract(cc_time.x * speed));\n    uv /= zoom;\n    float loop = floor(cc_time.x * speed);\n    uv = R2(angle * loop) * uv;\n    vec2 origin = vec2(0.);\n    float r = R;\n    float blur = 0.01;\n    float mask = 1.0;\n    mat2 matR2 = R2(angle);\n    vec2 spiralUV = ComplexPow(uv, C);\n    vec3 finalColor = texture2D(texture, spiralUV * 0.5 + 0.5).rgb;\n    for (int i = 0; i < 6; ++i) {\n        uv = matR2 * uv * scale;\n        spiralUV = ComplexPow(uv, C);\n        float mask = Circle(spiralUV, origin, r, blur);\n        vec3 color = texture2D(texture, spiralUV * 0.5 + 0.5).rgb;\n        finalColor = mix(color, finalColor, mask);\n    }\n    gl_FragColor = vec4(finalColor, 1.0);\n}"
+        },
+        "builtins": {
+          "globals": {
+            "blocks": [
+              {
+                "name": "CCGlobal",
+                "defines": []
+              }
+            ],
+            "samplers": []
+          },
+          "locals": {
+            "blocks": [
+              {
+                "name": "CCLocal",
+                "defines": []
+              }
+            ],
+            "samplers": []
+          }
+        },
+        "defines": [],
+        "blocks": [
+          {
+            "name": "FARGS",
+            "members": [
+              {
+                "name": "C",
+                "type": 14,
+                "count": 1
+              },
+              {
+                "name": "R",
+                "type": 13,
+                "count": 1
+              },
+              {
+                "name": "scale",
+                "type": 13,
+                "count": 1
+              },
+              {
+                "name": "angle",
+                "type": 13,
+                "count": 1
+              },
+              {
+                "name": "speed",
+                "type": 13,
+                "count": 1
+              }
+            ],
+            "defines": [],
+            "binding": 0
+          }
+        ],
+        "samplers": [
+          {
+            "name": "texture",
+            "type": 29,
+            "count": 1,
+            "defines": [],
+            "binding": 30
+          }
+        ],
+        "record": null,
+        "name": "SpiralZoom|vs|fs"
+      }
+    ]
+  },
+  [
+    {
+      "__type__": "cc.SceneAsset",
+      "_name": "SceneSpiralZoom",
+      "scene": {
+        "__id__": 1
+      },
+      "asyncLoadAssets": null
+    },
+    {
+      "__type__": "cc.Scene",
+      "_name": "New Node",
+      "_children": [
+        {
+          "__id__": 2
+        }
+      ],
+      "_anchorPoint": {
+        "__type__": "cc.Vec2"
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "Canvas",
+      "_parent": {
+        "__id__": 1
+      },
+      "_children": [
+        {
+          "__id__": 3
+        },
+        {
+          "__id__": 4
+        },
+        {
+          "__id__": 5
+        },
+        {
+          "__id__": 6
+        }
+      ],
+      "_components": [
+        {
+          "__type__": "cc.Canvas",
+          "node": {
+            "__id__": 2
+          },
+          "_designResolution": {
+            "__type__": "cc.Size",
+            "width": 720,
+            "height": 1280
+          },
+          "_fitWidth": true
+        },
+        {
+          "__type__": "cc.Widget",
+          "node": {
+            "__id__": 2
+          },
+          "_alignFlags": 45
+        },
+        {
+          "__type__": "4d102k6wppNGIkjlgi8Oycw",
+          "node": {
+            "__id__": 2
+          }
+        }
+      ],
+      "_color": {
+        "__type__": "cc.Color",
+        "r": 252,
+        "g": 252,
+        "b": 252
+      },
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 720,
+        "height": 1280
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          360,
+          640,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "_id": "a286bbGknJLZpRpxROV6M94"
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "Main Camera",
+      "_parent": {
+        "__id__": 2
+      },
+      "_components": [
+        {
+          "__type__": "cc.Camera",
+          "node": {
+            "__id__": 3
+          },
+          "_clearFlags": 7,
+          "_depth": -1
+        }
+      ],
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          637.731034984197,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "background",
+      "_parent": {
+        "__id__": 2
+      },
+      "_components": [
+        {
+          "__type__": "cc.Widget",
+          "node": {
+            "__id__": 4
+          },
+          "_alignFlags": 45,
+          "_originalWidth": 200,
+          "_originalHeight": 150
+        },
+        {
+          "__type__": "cc.Sprite",
+          "node": {
+            "__id__": 4
+          },
+          "_materials": [
+            {
+              "__uuid__": "ecpdLyjvZBwrvm+cedCcQy"
+            }
+          ],
+          "_type": 1,
+          "_sizeMode": 0
+        }
+      ],
+      "_color": {
+        "__type__": "cc.Color",
+        "r": 27,
+        "g": 38,
+        "b": 46
+      },
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 720,
+        "height": 1280
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "spiralZoom",
+      "_parent": {
+        "__id__": 2
+      },
+      "_components": [
+        {
+          "__type__": "89871MxfkBJjJh0o236XNDC",
+          "node": {
+            "__id__": 5
+          }
+        },
+        {
+          "__type__": "cc.Sprite",
+          "node": {
+            "__id__": 5
+          },
+          "_materials": [
+            {
+              "__uuid__": "cfSnSR15lG4otI8hgGSkfe"
+            }
+          ],
+          "_spriteFrame": {
+            "__uuid__": "d6xGXOBvNFR6XwpTNetu3V"
+          },
+          "_sizeMode": 0
+        }
+      ],
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 720,
+        "height": 720
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          -0.571,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1.8,
+          1.8,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "btnQuit",
+      "_parent": {
+        "__id__": 2
+      },
+      "_children": [
+        {
+          "__id__": 7
+        }
+      ],
+      "_components": [
+        {
+          "__type__": "cc.Button",
+          "node": {
+            "__id__": 6
+          },
+          "_N$transition": 3,
+          "transition": 3,
+          "_N$normalColor": {
+            "__type__": "cc.Color",
+            "r": 230,
+            "g": 230,
+            "b": 230
+          },
+          "_N$pressedColor": {
+            "__type__": "cc.Color",
+            "r": 200,
+            "g": 200,
+            "b": 200
+          },
+          "pressedColor": {
+            "__type__": "cc.Color",
+            "r": 200,
+            "g": 200,
+            "b": 200
+          },
+          "_N$disabledColor": {
+            "__type__": "cc.Color",
+            "r": 120,
+            "g": 120,
+            "b": 120,
+            "a": 200
+          },
+          "_N$normalSprite": {
+            "__uuid__": "6bbrf4G5VID5u3nmCX2Knp"
+          },
+          "_N$pressedSprite": {
+            "__uuid__": "e97GVMl6JHh5Ml5qEDdSGa"
+          },
+          "pressedSprite": {
+            "__uuid__": "e97GVMl6JHh5Ml5qEDdSGa"
+          },
+          "_N$hoverSprite": {
+            "__uuid__": "f0BIwQ8D5Ml7nTNQbh1YlS"
+          },
+          "hoverSprite": {
+            "__uuid__": "f0BIwQ8D5Ml7nTNQbh1YlS"
+          },
+          "_N$disabledSprite": {
+            "__uuid__": "29FYIk+N1GYaeWH/q1NxQO"
+          },
+          "_N$target": {
+            "__id__": 7
+          }
+        },
+        {
+          "__type__": "58a22OqN5RI3plga6Z+CurZ",
+          "node": {
+            "__id__": 6
+          },
+          "sceneName": "SceneShaders"
+        },
+        {
+          "__type__": "cc.Widget",
+          "node": {
+            "__id__": 6
+          },
+          "alignMode": 2,
+          "_alignFlags": 33,
+          "_right": 40.64200000000005,
+          "_top": 41.45800000000003
+        }
+      ],
+      "_prefab": {
+        "__type__": "cc.PrefabInfo",
+        "root": {
+          "__id__": 6
+        },
+        "asset": {
+          "__uuid__": "6dpCGuOsFJSI1lksMDQfLz"
+        },
+        "fileId": "ce0M6as4lBA7QtDRVjuTPC"
+      },
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 150,
+        "height": 40
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          244.35799999999995,
+          578.5419999999999,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "Background",
+      "_objFlags": 512,
+      "_parent": {
+        "__id__": 6
+      },
+      "_children": [
+        {
+          "__id__": 8
+        }
+      ],
+      "_components": [
+        {
+          "__type__": "cc.Sprite",
+          "node": {
+            "__id__": 7
+          },
+          "_materials": [
+            {
+              "__uuid__": "ecpdLyjvZBwrvm+cedCcQy"
+            }
+          ],
+          "_spriteFrame": {
+            "__uuid__": "6bbrf4G5VID5u3nmCX2Knp"
+          },
+          "_type": 1,
+          "_sizeMode": 0
+        },
+        {
+          "__type__": "cc.Widget",
+          "node": {
+            "__id__": 7
+          },
+          "alignMode": 0,
+          "_alignFlags": 45,
+          "_originalWidth": 100,
+          "_originalHeight": 40
+        }
+      ],
+      "_prefab": {
+        "__type__": "cc.PrefabInfo",
+        "root": {
+          "__id__": 6
+        },
+        "asset": {
+          "__uuid__": "6dpCGuOsFJSI1lksMDQfLz"
+        },
+        "fileId": "94U2qJRW5F5J6PizBxfR+W"
+      },
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 150,
+        "height": 40
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          0
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "Label",
+      "_objFlags": 512,
+      "_parent": {
+        "__id__": 7
+      },
+      "_components": [
+        {
+          "__type__": "cc.Label",
+          "node": {
+            "__id__": 8
+          },
+          "_materials": [
+            {
+              "__uuid__": "ecpdLyjvZBwrvm+cedCcQy"
+            }
+          ],
+          "_useOriginalSize": false,
+          "_fontSize": 20,
+          "_enableWrapText": false,
+          "_N$horizontalAlign": 1,
+          "_N$verticalAlign": 1,
+          "_N$overflow": 1,
+          "_N$cacheMode": 1
+        }
+      ],
+      "_prefab": {
+        "__type__": "cc.PrefabInfo",
+        "root": {
+          "__id__": 6
+        },
+        "asset": {
+          "__uuid__": "6dpCGuOsFJSI1lksMDQfLz"
+        },
+        "fileId": "f2UpzTBw1F0ateQZp9wAHp"
+      },
+      "_color": {
+        "__type__": "cc.Color"
+      },
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 100,
+        "height": 40
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    }
+  ],
+  {
+    "__type__": "cc.Material",
+    "_name": "SpiralZoom",
+    "_effectAsset": {
+      "__uuid__": "c5y+lrA6tL6YZugASU6UAA"
+    },
+    "_techniqueData": {
+      "0": {
+        "props": {
+          "C": {
+            "__type__": "cc.Vec2",
+            "x": 1,
+            "y": 0.149
+          },
+          "R": 0.9
+        }
+      }
+    }
+  },
+  {
+    "__type__": "cc.SpriteFrame",
+    "content": {
+      "name": "胶带+蜘蛛侠",
+      "texture": "63/pf8f5hA8oWSsH+nDZI3",
+      "rect": [
+        0,
+        0,
+        591,
+        591
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        591,
+        591
+      ],
+      "capInsets": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "__type__": "cc.SpriteFrame",
+    "content": {
+      "name": "default_btn_pressed",
+      "texture": "b4P/PCArtIdIH38t6mlw8Y",
+      "rect": [
+        0,
+        0,
+        40,
+        40
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        40,
+        40
+      ],
+      "capInsets": [
+        12,
+        12,
+        12,
+        12
+      ]
+    }
+  },
+  {
+    "__type__": "cc.SpriteFrame",
+    "content": {
+      "name": "default_btn_normal",
+      "texture": "e8Ueib+qJEhL6mXAHdnwbi",
+      "rect": [
+        0,
+        0,
+        40,
+        40
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        40,
+        40
+      ],
+      "capInsets": [
+        12,
+        12,
+        12,
+        12
+      ]
+    }
+  }
+]
