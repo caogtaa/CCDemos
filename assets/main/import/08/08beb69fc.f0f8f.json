@@ -27,14 +27,6 @@
     }
   },
   {
-    "__type__": "cc.ParticleAsset",
-    "_name": "atom.plist2",
-    "_native": ".plist",
-    "spriteFrame": {
-      "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
-    }
-  },
-  {
     "__type__": "cc.SpriteFrame",
     "content": {
       "name": "quit300x80",
@@ -328,9 +320,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -431,9 +420,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -534,9 +520,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -637,9 +620,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -740,9 +720,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -843,9 +820,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -946,9 +920,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -1049,9 +1020,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -1152,9 +1120,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -1255,9 +1220,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -1358,9 +1320,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -1461,9 +1420,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -1564,9 +1520,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -1667,9 +1620,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -1770,9 +1720,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
@@ -1873,9 +1820,6 @@
           ],
           "_dstBlendFactor": 1,
           "_custom": true,
-          "_file": {
-            "__uuid__": "68IohM+j9CH49mVxrzx474"
-          },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
