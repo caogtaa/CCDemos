@@ -56,7 +56,10 @@
   {
     "__type__": "cc.ParticleAsset",
     "_name": "atom",
-    "_native": ".plist"
+    "_native": ".plist",
+    "spriteFrame": {
+      "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
+    }
   },
   {
     "__type__": "cc.SpriteFrame",

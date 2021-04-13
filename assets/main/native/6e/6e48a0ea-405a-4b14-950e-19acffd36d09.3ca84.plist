@@ -102,7 +102,7 @@
     <real>65.79000091552734</real>
     <key>tangentialAcceleration</key>
     <real>-92.11000061035156</real>
-    <key>textureFileName</key>
-    <string>atom.png</string>
+    <key>spriteFrameUuid</key>
+    <string>92f994a5-e762-4099-a31d-d6b09edec8a4</string>
   </dict>
 </plist>
