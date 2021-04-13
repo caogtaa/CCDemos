@@ -29,33 +29,6 @@
   {
     "__type__": "cc.SpriteFrame",
     "content": {
-      "name": "atom",
-      "texture": "d0qC05vt5GxLaYyB/w3t//",
-      "rect": [
-        0,
-        0,
-        31,
-        31
-      ],
-      "offset": [
-        0,
-        0
-      ],
-      "originalSize": [
-        31,
-        31
-      ],
-      "capInsets": [
-        0,
-        0,
-        0,
-        0
-      ]
-    }
-  },
-  {
-    "__type__": "cc.SpriteFrame",
-    "content": {
       "name": "quit300x80",
       "texture": "0a0tBgmtlLNZLdbvgcEDeu",
       "rect": [
@@ -79,6 +52,11 @@
         0
       ]
     }
+  },
+  {
+    "__type__": "cc.ParticleAsset",
+    "_name": "atom",
+    "_native": ".plist"
   },
   {
     "__type__": "cc.SpriteFrame",
@@ -105,14 +83,6 @@
         0,
         0
       ]
-    }
-  },
-  {
-    "__type__": "cc.ParticleAsset",
-    "_name": "atom",
-    "_native": ".plist",
-    "spriteFrame": {
-      "__uuid__": "47LfXTNedBhJ5sf0G+5l7j"
     }
   },
   [
@@ -356,11 +326,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -458,11 +429,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -560,11 +532,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -662,11 +635,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -764,11 +738,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -866,11 +841,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -968,11 +944,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -1070,11 +1047,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -1172,11 +1150,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -1274,11 +1253,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -1376,11 +1356,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -1478,11 +1459,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -1580,11 +1562,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -1682,11 +1665,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -1784,11 +1768,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
@@ -1886,11 +1871,12 @@
           "_dstBlendFactor": 1,
           "_custom": true,
           "_file": {
-            "__uuid__": "b2aHrECZ5APKGS/0d2hvT1"
+            "__uuid__": "6eSKDqQFpLFJUOGaz/020J"
           },
           "_spriteFrame": {
             "__uuid__": "92+ZSl52JAmaMd1rCe3sik"
           },
+          "_stopped": false,
           "totalParticles": 20,
           "emissionRate": 9,
           "life": 0.5,
