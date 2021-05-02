@@ -1481,30 +1481,45 @@ window.__require = function e(t, n, r) {
         _this.btnRun = null;
         _this.images = [];
         _this.imageDisplay = null;
+        _this._originFPS = 60;
         _this._paused = false;
         _this._srcIndex = 0;
-        _this._originFPS = 60;
+        _this._viewCenter = cc.v2(0, 0);
+        _this._viewScale = 1;
+        _this._textureSize = cc.size(1024, 1024);
         return _this;
       }
       SceneCellularAutomata.prototype.onLoad = function() {};
       SceneCellularAutomata.prototype.onEnable = function() {
         this._originFPS = cc.game.getFrameRate();
+        this._originEnableMultiTouch = cc.macro.ENABLE_MULTI_TOUCH;
+        cc.macro.ENABLE_MULTI_TOUCH = true;
       };
       SceneCellularAutomata.prototype.onDisable = function() {
         cc.game.setFrameRate(this._originFPS);
+        cc.macro.ENABLE_MULTI_TOUCH = this._originEnableMultiTouch;
       };
       SceneCellularAutomata.prototype.start = function() {
-        this.images[this._srcIndex].spriteFrame = this.imageDisplay.spriteFrame;
+        var imageDisplay = this.imageDisplay;
         for (var _i = 0, _a = this.images; _i < _a.length; _i++) {
           var image = _a[_i];
-          this.UpdateMaterialProperties(image);
+          this.UpdateRenderTextureMatProperties(image);
         }
+        this._viewCenter.x = this._textureSize.width / 2;
+        this._viewCenter.y = this._textureSize.height / 2;
+        this._viewScale = 1;
+        this.UpdateDisplayMatProperties();
+        imageDisplay.node.on(cc.Node.EventType.TOUCH_START, this.OnDisplayTouchStart, this);
+        imageDisplay.node.on(cc.Node.EventType.TOUCH_MOVE, this.OnDisplayTouchMove, this);
+        imageDisplay.node.on(cc.Node.EventType.TOUCH_END, this.OnDisplayTouchEnd, this);
+        imageDisplay.node.on(cc.Node.EventType.TOUCH_CANCEL, this.OnDisplayTouchEnd, this);
+        imageDisplay.node.on(cc.Node.EventType.MOUSE_WHEEL, this.OnDisplayMouseWheel, this);
         var that = this;
         this.btnRun.node.on("click", function() {
           that._paused = !that._paused;
         });
       };
-      SceneCellularAutomata.prototype.UpdateMaterialProperties = function(sprite) {
+      SceneCellularAutomata.prototype.UpdateRenderTextureMatProperties = function(sprite) {
         var mat = sprite.getMaterial(0);
         if (!mat) return;
         var sf = sprite.spriteFrame;
@@ -1519,6 +1534,23 @@ window.__require = function e(t, n, r) {
         }
         mat.setProperty("dx", dx);
         mat.setProperty("dy", dy);
+      };
+      SceneCellularAutomata.prototype.UpdateDisplayMatProperties = function() {
+        var sprite = this.imageDisplay;
+        var mat = sprite.getMaterial(0);
+        if (!mat) return;
+        var width = sprite.node.width;
+        var height = sprite.node.height;
+        var viewCenter = this._viewCenter;
+        var viewScale = this._viewScale;
+        var tw = this._textureSize.width;
+        var th = this._textureSize.height;
+        var left = viewCenter.x / tw - width / (2 * tw * viewScale);
+        var right = viewCenter.x / tw + width / (2 * tw * viewScale);
+        var bottom = viewCenter.y / th - height / (2 * th * viewScale);
+        var top = viewCenter.y / th + height / (2 * th * viewScale);
+        mat.setProperty("p", [ right - left, top - bottom ]);
+        mat.setProperty("q", [ left, bottom ]);
       };
       SceneCellularAutomata.prototype.Tick = function() {
         if (this._paused) return;
@@ -1594,6 +1626,36 @@ window.__require = function e(t, n, r) {
           success || (target.active = false);
         }
         return target["__gt_texture"];
+      };
+      SceneCellularAutomata.prototype.OnDisplayTouchStart = function(e) {};
+      SceneCellularAutomata.prototype.OnDisplayTouchMove = function(e) {
+        var touches = e.getTouches();
+        if (1 === touches.length) {
+          var touch = touches[0];
+          var offset = touch.getDelta();
+          offset.mulSelf(1 / this._viewScale);
+          this._viewCenter.subSelf(offset);
+          this.UpdateDisplayMatProperties();
+        } else if (touches.length >= 2) {
+          var t0 = touches[0];
+          var t1 = touches[1];
+          var p0 = t0.getLocation();
+          var p1 = t1.getLocation();
+          var newLength = p0.sub(p1).len();
+          var oldLength = p0.sub(t0.getDelta()).sub(p1).add(t1.getDelta()).len();
+          var scale = newLength / oldLength;
+          this.DisplayScaleBy(scale);
+        }
+      };
+      SceneCellularAutomata.prototype.OnDisplayTouchEnd = function(e) {};
+      SceneCellularAutomata.prototype.OnDisplayMouseWheel = function(e) {
+        var scrollY = e.getScrollY();
+        if (!scrollY) return;
+        scrollY > 0 ? this.DisplayScaleBy(1.1) : this.DisplayScaleBy(.9);
+      };
+      SceneCellularAutomata.prototype.DisplayScaleBy = function(scale) {
+        this._viewScale = scale > 0 ? Math.min(this._viewScale * scale, 1e3) : Math.max(this._viewScale * scale, .001);
+        this.UpdateDisplayMatProperties();
       };
       __decorate([ property(cc.Button) ], SceneCellularAutomata.prototype, "btnRun", void 0);
       __decorate([ property([ cc.Sprite ]) ], SceneCellularAutomata.prototype, "images", void 0);
