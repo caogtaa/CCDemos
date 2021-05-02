@@ -1442,6 +1442,168 @@ window.__require = function e(t, n, r) {
     exports.SDF = SDF;
     cc._RF.pop();
   }, {} ],
+  SceneCellularAutomata: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "e934dHg3gdCcoXg1LOhhi2M", "SceneCellularAutomata");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var SceneCellularAutomata = function(_super) {
+      __extends(SceneCellularAutomata, _super);
+      function SceneCellularAutomata() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this.btnRun = null;
+        _this.images = [];
+        _this.imageDisplay = null;
+        _this._paused = false;
+        _this._srcIndex = 0;
+        _this._originFPS = 60;
+        return _this;
+      }
+      SceneCellularAutomata.prototype.onLoad = function() {};
+      SceneCellularAutomata.prototype.onEnable = function() {
+        this._originFPS = cc.game.getFrameRate();
+      };
+      SceneCellularAutomata.prototype.onDisable = function() {
+        cc.game.setFrameRate(this._originFPS);
+      };
+      SceneCellularAutomata.prototype.start = function() {
+        this.images[this._srcIndex].spriteFrame = this.imageDisplay.spriteFrame;
+        for (var _i = 0, _a = this.images; _i < _a.length; _i++) {
+          var image = _a[_i];
+          this.UpdateMaterialProperties(image);
+        }
+        var that = this;
+        this.btnRun.node.on("click", function() {
+          that._paused = !that._paused;
+        });
+      };
+      SceneCellularAutomata.prototype.UpdateMaterialProperties = function(sprite) {
+        var mat = sprite.getMaterial(0);
+        if (!mat) return;
+        var sf = sprite.spriteFrame;
+        var dx, dy;
+        if (sf) {
+          var sz = sf.getOriginalSize();
+          dx = 1 / sz.width;
+          dy = 1 / sz.height;
+        } else {
+          dx = 1 / sprite.node.width;
+          dy = 1 / sprite.node.height;
+        }
+        mat.setProperty("dx", dx);
+        mat.setProperty("dy", dy);
+      };
+      SceneCellularAutomata.prototype.Tick = function() {
+        if (this._paused) return;
+        var order = this._srcIndex;
+        var from = this.images[order];
+        var to = this.images[1 - order];
+        var imageDisplay = this.imageDisplay;
+        from.enabled = true;
+        this.RenderToMemory(from.node, [], to.node);
+        from.enabled = false;
+        imageDisplay.spriteFrame = to.spriteFrame;
+        to.node.scaleY * imageDisplay.node.scaleY < 0 && (imageDisplay.node.scaleY *= -1);
+        this._srcIndex = 1 - this._srcIndex;
+      };
+      SceneCellularAutomata.prototype.update = function(dt) {
+        this.Tick();
+      };
+      SceneCellularAutomata.prototype.OnFPSEditDidEnded = function(sender) {
+        var fps = parseInt(sender.string);
+        cc.game.setFrameRate(fps);
+      };
+      SceneCellularAutomata.prototype.RenderToMemory = function(root, others, target, extend) {
+        void 0 === extend && (extend = 0);
+        var node = new cc.Node();
+        node.parent = root;
+        node.x = (.5 - root.anchorX) * root.width;
+        node.y = (.5 - root.anchorY) * root.height;
+        var camera = node.addComponent(cc.Camera);
+        camera.backgroundColor = new cc.Color(255, 255, 255, 0);
+        camera.clearFlags = cc.Camera.ClearFlags.DEPTH | cc.Camera.ClearFlags.STENCIL | cc.Camera.ClearFlags.COLOR;
+        camera.cullingMask = 4294967295;
+        var success = false;
+        try {
+          var scaleX = 1;
+          var scaleY = 1;
+          var gl = cc.game._renderContext;
+          var targetWidth = Math.floor(root.width * scaleX + 2 * extend);
+          var targetHeight = Math.floor(root.height * scaleY + 2 * extend);
+          var texture = target["__gt_texture"];
+          if (!texture || texture.width != targetWidth || texture.height != target.height) {
+            texture = target["__gt_texture"] = new cc.RenderTexture();
+            texture.initWithSize(targetWidth, targetHeight, gl.STENCIL_INDEX8);
+            texture.packable = false;
+            texture.setWrapMode(cc.Texture2D.WrapMode.REPEAT, cc.Texture2D.WrapMode.REPEAT);
+            texture.setFilters(cc.Texture2D.Filter.NEAREST, cc.Texture2D.Filter.NEAREST);
+          }
+          camera.alignWithScreen = false;
+          camera.orthoSize = targetHeight / 2;
+          camera.targetTexture = texture;
+          camera.render(root);
+          if (others) for (var _i = 0, others_1 = others; _i < others_1.length; _i++) {
+            var o = others_1[_i];
+            camera.render(o);
+          }
+          var screenShot = target;
+          screenShot.active = true;
+          screenShot.opacity = 255;
+          screenShot.width = targetWidth;
+          screenShot.height = targetHeight;
+          screenShot.angle = root.angle;
+          screenShot.scaleX = 1 / scaleX;
+          screenShot.scaleY = -1 / scaleY;
+          var sprite = screenShot.getComponent(cc.Sprite);
+          sprite || (sprite = screenShot.addComponent(cc.Sprite));
+          if (!sprite.spriteFrame || sprite.spriteFrame.getTexture() != texture) {
+            sprite.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+            sprite.spriteFrame = new cc.SpriteFrame(texture);
+          }
+          success = true;
+        } finally {
+          camera.targetTexture = null;
+          node.removeFromParent();
+          success || (target.active = false);
+        }
+        return target["__gt_texture"];
+      };
+      __decorate([ property(cc.Button) ], SceneCellularAutomata.prototype, "btnRun", void 0);
+      __decorate([ property([ cc.Sprite ]) ], SceneCellularAutomata.prototype, "images", void 0);
+      __decorate([ property(cc.Sprite) ], SceneCellularAutomata.prototype, "imageDisplay", void 0);
+      SceneCellularAutomata = __decorate([ ccclass ], SceneCellularAutomata);
+      return SceneCellularAutomata;
+    }(cc.Component);
+    exports.default = SceneCellularAutomata;
+    cc._RF.pop();
+  }, {} ],
   SceneLayeredBatchingScrollView: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "a8e90q5ybRNipx0efwIGCPq", "SceneLayeredBatchingScrollView");
@@ -1494,6 +1656,63 @@ window.__require = function e(t, n, r) {
       return SceneLayeredBatchingScrollView;
     }(cc.Component);
     exports.default = SceneLayeredBatchingScrollView;
+    cc._RF.pop();
+  }, {} ],
+  SceneLoad: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "2da66DFC9xCnqM41G/oRzxH", "SceneLoad");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var SceneLoad = function(_super) {
+      __extends(SceneLoad, _super);
+      function SceneLoad() {
+        return null !== _super && _super.apply(this, arguments) || this;
+      }
+      SceneLoad.prototype.onLoad = function() {};
+      SceneLoad.prototype.start = function() {
+        if (this.Redirect()) return;
+        cc.director.loadScene("SceneWelcome");
+      };
+      SceneLoad.prototype.Redirect = function() {
+        var search = window.location.search;
+        if (search) {
+          var param = new URLSearchParams(search);
+          var sceneName = param.get("scene");
+          return cc.director.loadScene(sceneName);
+        }
+        return false;
+      };
+      SceneLoad = __decorate([ ccclass ], SceneLoad);
+      return SceneLoad;
+    }(cc.Component);
+    exports.default = SceneLoad;
     cc._RF.pop();
   }, {} ],
   SceneMetaBalls: [ function(require, module, exports) {
@@ -2354,4 +2573,4 @@ window.__require = function e(t, n, r) {
   }, {
     "./SpriteMaskedAvatarAssembler": "SpriteMaskedAvatarAssembler"
   } ]
-}, {}, [ "SceneTestGraphics", "SceneSpriteMaskedAvatars", "AvatarAssembler", "AvatarSprite", "EqualScalingAssembler", "EqualScalingSprite", "SpriteMaskedAvatarAssembler", "SpriteMaskedAvatarSprite", "MovingBGAssembler", "MovingBGSprite", "LayeredBatchingAssembler", "LayeredBatchingRootRenderer", "SceneLayeredBatchingScrollView", "SceneMetaBalls", "MetaBallsAssembler", "MetaBallsRenderer", "SceneParticlesBatching", "SDF", "SceneSDF", "NavigatorButton", "SimpleDraggable", "SceneTest", "SceneWelcome", "GTAssembler2D", "GTAutoFitSpriteAssembler2D", "GTSimpleSpriteAssembler2D" ]);
+}, {}, [ "SceneTestGraphics", "SceneSpriteMaskedAvatars", "AvatarAssembler", "AvatarSprite", "EqualScalingAssembler", "EqualScalingSprite", "SpriteMaskedAvatarAssembler", "SpriteMaskedAvatarSprite", "SceneCellularAutomata", "MovingBGAssembler", "MovingBGSprite", "LayeredBatchingAssembler", "LayeredBatchingRootRenderer", "SceneLayeredBatchingScrollView", "SceneMetaBalls", "MetaBallsAssembler", "MetaBallsRenderer", "SceneParticlesBatching", "SDF", "SceneSDF", "NavigatorButton", "SimpleDraggable", "SceneLoad", "SceneTest", "SceneWelcome", "GTAssembler2D", "GTAutoFitSpriteAssembler2D", "GTSimpleSpriteAssembler2D" ]);
