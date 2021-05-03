@@ -189,6 +189,104 @@ window.__require = function e(t, n, r) {
   }, {
     "./AvatarAssembler": "AvatarAssembler"
   } ],
+  CAParser: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "54b83KY5shP84aPwL97wCnR", "CAParser");
+    "use strict";
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    exports.CAParser = exports.CAInfo = void 0;
+    var CAInfo = function() {
+      function CAInfo() {
+        this.tokens = [];
+      }
+      return CAInfo;
+    }();
+    exports.CAInfo = CAInfo;
+    var CAParser = function() {
+      function CAParser() {}
+      CAParser.Parse = function(data) {
+        var num = 0;
+        var tokens = [];
+        for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
+          var c = data_1[_i];
+          if ("!" === c) break;
+          if ("0" <= c && c <= "9") {
+            num *= 10;
+            num += parseInt(c);
+          } else {
+            tokens.push({
+              count: Math.max(1, num),
+              type: c
+            });
+            num = 0;
+          }
+        }
+        var w = 0;
+        var h = 0;
+        num = 0;
+        for (var _a = 0, tokens_1 = tokens; _a < tokens_1.length; _a++) {
+          var t = tokens_1[_a];
+          if ("$" === t.type) {
+            h += t.count;
+            w = Math.max(w, num);
+            num = 0;
+          } else num += t.count;
+        }
+        var result = new CAInfo();
+        result.tokens = tokens;
+        result.width = w;
+        result.height = h;
+        return result;
+      };
+      CAParser.Merge = function(rInfo, gInfo, bInfo, aInfo, targetWidth, targetHeight, out) {
+        var compOffset = [ 0 ];
+        gInfo || compOffset.push(1);
+        bInfo || compOffset.push(2);
+        aInfo || compOffset.push(3);
+        var imgData = new Uint8Array(targetHeight * targetWidth * 4);
+        this.Fill(rInfo, compOffset, imgData, targetWidth, targetHeight);
+        gInfo && this.Fill(gInfo, [ 1 ], imgData, targetWidth, targetHeight);
+        bInfo && this.Fill(bInfo, [ 2 ], imgData, targetWidth, targetHeight);
+        aInfo && this.Fill(aInfo, [ 3 ], imgData, targetWidth, targetHeight);
+        var texture = out || new cc.RenderTexture();
+        texture.initWithData(imgData, cc.Texture2D.PixelFormat.RGBA8888, targetWidth, targetHeight);
+        texture.packable = false;
+        texture.setWrapMode(cc.Texture2D.WrapMode.REPEAT, cc.Texture2D.WrapMode.REPEAT);
+        texture.setFilters(cc.Texture2D.Filter.NEAREST, cc.Texture2D.Filter.NEAREST);
+        return texture;
+      };
+      CAParser.Fill = function(info, compOffset, imgData, targetWidth, targetHeight) {
+        var sx = Math.floor((targetWidth - info.width) / 2);
+        var sy = Math.floor((targetHeight - info.height) / 2);
+        var x = sx;
+        var y = sy;
+        for (var _i = 0, _a = info.tokens; _i < _a.length; _i++) {
+          var t = _a[_i];
+          if ("$" === t.type) {
+            y += t.count;
+            x = sx;
+          } else if ("b" === t.type) x += t.count; else if ("o" === t.type) {
+            var ex = Math.min(x + t.count, targetWidth);
+            while (x < ex) {
+              if (0 <= y && y < targetHeight && 0 <= x && x < targetWidth) {
+                var p = 4 * ((targetHeight - 1 - y) * targetWidth + x);
+                for (var _b = 0, compOffset_1 = compOffset; _b < compOffset_1.length; _b++) {
+                  var offset = compOffset_1[_b];
+                  imgData[p + offset] = 255;
+                }
+              }
+              ++x;
+            }
+          }
+        }
+      };
+      return CAParser;
+    }();
+    exports.CAParser = CAParser;
+    cc._RF.pop();
+  }, {} ],
   EqualScalingAssembler: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "e54e38Lmk1LtatjNGNMggDD", "EqualScalingAssembler");
@@ -1473,33 +1571,53 @@ window.__require = function e(t, n, r) {
     Object.defineProperty(exports, "__esModule", {
       value: true
     });
+    var CAParser_1 = require("./CAParser");
     var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
     var SceneCellularAutomata = function(_super) {
       __extends(SceneCellularAutomata, _super);
       function SceneCellularAutomata() {
         var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this.btnRandom = null;
         _this.btnRun = null;
+        _this.btnTest = null;
         _this.images = [];
         _this.imageDisplay = null;
+        _this.lblFPS = null;
         _this._originFPS = 60;
         _this._paused = false;
         _this._srcIndex = 0;
         _this._viewCenter = cc.v2(0, 0);
         _this._viewScale = 1;
         _this._textureSize = cc.size(1024, 1024);
+        _this._configs = [];
         return _this;
       }
-      SceneCellularAutomata.prototype.onLoad = function() {};
+      SceneCellularAutomata.prototype.onLoad = function() {
+        var that = this;
+        cc.resources.load("ca", cc.JsonAsset, function(err, data) {
+          var json = null === data || void 0 === data ? void 0 : data.json;
+          if (json) for (var key in json) that._configs.push({
+            name: key,
+            str: json[key]
+          });
+        });
+      };
       SceneCellularAutomata.prototype.onEnable = function() {
         this._originFPS = cc.game.getFrameRate();
         this._originEnableMultiTouch = cc.macro.ENABLE_MULTI_TOUCH;
+        this.SetFrameRate(20);
         cc.macro.ENABLE_MULTI_TOUCH = true;
       };
       SceneCellularAutomata.prototype.onDisable = function() {
         cc.game.setFrameRate(this._originFPS);
         cc.macro.ENABLE_MULTI_TOUCH = this._originEnableMultiTouch;
       };
+      SceneCellularAutomata.prototype.SetFrameRate = function(fps) {
+        cc.game.setFrameRate(fps);
+        this.lblFPS.string = "" + fps;
+      };
       SceneCellularAutomata.prototype.start = function() {
+        var _this = this;
         var imageDisplay = this.imageDisplay;
         for (var _i = 0, _a = this.images; _i < _a.length; _i++) {
           var image = _a[_i];
@@ -1507,7 +1625,7 @@ window.__require = function e(t, n, r) {
         }
         this._viewCenter.x = this._textureSize.width / 2;
         this._viewCenter.y = this._textureSize.height / 2;
-        this._viewScale = 1;
+        this._viewScale = 4;
         this.UpdateDisplayMatProperties();
         imageDisplay.node.on(cc.Node.EventType.TOUCH_START, this.OnDisplayTouchStart, this);
         imageDisplay.node.on(cc.Node.EventType.TOUCH_MOVE, this.OnDisplayTouchMove, this);
@@ -1515,9 +1633,30 @@ window.__require = function e(t, n, r) {
         imageDisplay.node.on(cc.Node.EventType.TOUCH_CANCEL, this.OnDisplayTouchEnd, this);
         imageDisplay.node.on(cc.Node.EventType.MOUSE_WHEEL, this.OnDisplayMouseWheel, this);
         var that = this;
+        this.btnRandom.node.on("click", function() {
+          var configs = that._configs;
+          if (!configs) return;
+          var index = _this.RandomRangeInt(0, configs.length);
+          var rInfo = CAParser_1.CAParser.Parse(configs[index].str);
+          var texture = CAParser_1.CAParser.Merge(rInfo, null, null, null, that._textureSize.width, that._textureSize.height);
+          that.SetCATexture(texture);
+        });
         this.btnRun.node.on("click", function() {
           that._paused = !that._paused;
         });
+        this.btnTest.node.on("click", function() {
+          var configs = that._configs;
+          if (!configs) return;
+          var rInfo = CAParser_1.CAParser.Parse(configs[_this.RandomRangeInt(0, configs.length)].str);
+          var gInfo = CAParser_1.CAParser.Parse(configs[_this.RandomRangeInt(0, configs.length)].str);
+          var bInfo = CAParser_1.CAParser.Parse(configs[_this.RandomRangeInt(0, configs.length)].str);
+          var texture = CAParser_1.CAParser.Merge(rInfo, gInfo, bInfo, null, that._textureSize.width, that._textureSize.height);
+          that.SetCATexture(texture);
+        });
+      };
+      SceneCellularAutomata.prototype.SetCATexture = function(texture) {
+        this._srcIndex = 0;
+        this.images[this._srcIndex].spriteFrame = new cc.SpriteFrame(texture);
       };
       SceneCellularAutomata.prototype.UpdateRenderTextureMatProperties = function(sprite) {
         var mat = sprite.getMaterial(0);
@@ -1568,9 +1707,11 @@ window.__require = function e(t, n, r) {
       SceneCellularAutomata.prototype.update = function(dt) {
         this.Tick();
       };
-      SceneCellularAutomata.prototype.OnFPSEditDidEnded = function(sender) {
-        var fps = parseInt(sender.string);
-        cc.game.setFrameRate(fps);
+      SceneCellularAutomata.prototype.OnFPSSliderChanged = function(sender) {
+        var fps = Math.floor(120 * sender.progress);
+        fps = Math.max(fps, 2);
+        fps = Math.min(fps, 120);
+        this.SetFrameRate(fps);
       };
       SceneCellularAutomata.prototype.RenderToMemory = function(root, others, target, extend) {
         void 0 === extend && (extend = 0);
@@ -1657,15 +1798,26 @@ window.__require = function e(t, n, r) {
         this._viewScale = scale > 0 ? Math.min(this._viewScale * scale, 1e3) : Math.max(this._viewScale * scale, .001);
         this.UpdateDisplayMatProperties();
       };
+      SceneCellularAutomata.prototype.RandomRange = function(min, max) {
+        return Math.random() * (max - min) + min;
+      };
+      SceneCellularAutomata.prototype.RandomRangeInt = function(min, max) {
+        return Math.floor(this.RandomRange(min, max));
+      };
+      __decorate([ property(cc.Button) ], SceneCellularAutomata.prototype, "btnRandom", void 0);
       __decorate([ property(cc.Button) ], SceneCellularAutomata.prototype, "btnRun", void 0);
+      __decorate([ property(cc.Button) ], SceneCellularAutomata.prototype, "btnTest", void 0);
       __decorate([ property([ cc.Sprite ]) ], SceneCellularAutomata.prototype, "images", void 0);
       __decorate([ property(cc.Sprite) ], SceneCellularAutomata.prototype, "imageDisplay", void 0);
+      __decorate([ property(cc.Label) ], SceneCellularAutomata.prototype, "lblFPS", void 0);
       SceneCellularAutomata = __decorate([ ccclass ], SceneCellularAutomata);
       return SceneCellularAutomata;
     }(cc.Component);
     exports.default = SceneCellularAutomata;
     cc._RF.pop();
-  }, {} ],
+  }, {
+    "./CAParser": "CAParser"
+  } ],
   SceneLayeredBatchingScrollView: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "a8e90q5ybRNipx0efwIGCPq", "SceneLayeredBatchingScrollView");
@@ -2635,4 +2787,4 @@ window.__require = function e(t, n, r) {
   }, {
     "./SpriteMaskedAvatarAssembler": "SpriteMaskedAvatarAssembler"
   } ]
-}, {}, [ "SceneTestGraphics", "SceneSpriteMaskedAvatars", "AvatarAssembler", "AvatarSprite", "EqualScalingAssembler", "EqualScalingSprite", "SpriteMaskedAvatarAssembler", "SpriteMaskedAvatarSprite", "SceneCellularAutomata", "MovingBGAssembler", "MovingBGSprite", "LayeredBatchingAssembler", "LayeredBatchingRootRenderer", "SceneLayeredBatchingScrollView", "SceneMetaBalls", "MetaBallsAssembler", "MetaBallsRenderer", "SceneParticlesBatching", "SDF", "SceneSDF", "NavigatorButton", "SimpleDraggable", "SceneLoad", "SceneTest", "SceneWelcome", "GTAssembler2D", "GTAutoFitSpriteAssembler2D", "GTSimpleSpriteAssembler2D" ]);
+}, {}, [ "SceneTestGraphics", "SceneSpriteMaskedAvatars", "AvatarAssembler", "AvatarSprite", "EqualScalingAssembler", "EqualScalingSprite", "SpriteMaskedAvatarAssembler", "SpriteMaskedAvatarSprite", "CAParser", "SceneCellularAutomata", "MovingBGAssembler", "MovingBGSprite", "LayeredBatchingAssembler", "LayeredBatchingRootRenderer", "SceneLayeredBatchingScrollView", "SceneMetaBalls", "MetaBallsAssembler", "MetaBallsRenderer", "SceneParticlesBatching", "SDF", "SceneSDF", "NavigatorButton", "SimpleDraggable", "SceneLoad", "SceneTest", "SceneWelcome", "GTAssembler2D", "GTAutoFitSpriteAssembler2D", "GTSimpleSpriteAssembler2D" ]);

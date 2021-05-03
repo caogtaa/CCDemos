@@ -1,0 +1,28 @@
+{
+    "paths": {
+        "85UHrDgaFC7o0PhhbLVDJJ": [
+            "ca",
+            "cc.JsonAsset"
+        ]
+    },
+    "uuids": [
+        "85UHrDgaFC7o0PhhbLVDJJ"
+    ],
+    "scenes": {},
+    "redirect": [],
+    "deps": [],
+    "packs": {},
+    "name": "resources",
+    "importBase": "import",
+    "nativeBase": "native",
+    "debug": true,
+    "isZip": false,
+    "encrypted": false,
+    "versions": {
+        "import": [
+            "85UHrDgaFC7o0PhhbLVDJJ",
+            "e6468"
+        ],
+        "native": []
+    }
+}

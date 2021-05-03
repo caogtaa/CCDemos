@@ -26,7 +26,7 @@ window._CCSettings = {
             false
         ]
     ],
-    hasResourcesBundle: false,
+    hasResourcesBundle: true,
     hasStartSceneBundle: false,
     remoteBundles: [],
     subpackages: [],
@@ -36,6 +36,7 @@ window._CCSettings = {
     jsList: [],
     bundleVers: {
         internal: "493b3",
-        main: "aae76"
+        resources: "5666a",
+        main: "32b2a"
     }
 };
