@@ -2477,6 +2477,102 @@ window.__require = function e(t, n, r) {
     exports.default = SceneTest;
     cc._RF.pop();
   }, {} ],
+  SceneVisualizeMusic: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "66078LwZ6VOTp0Xu66oVwY9", "SceneVisualizeMusic");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var SceneVisualizeMusic = function(_super) {
+      __extends(SceneVisualizeMusic, _super);
+      function SceneVisualizeMusic() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this.clip = null;
+        _this.sprite = null;
+        _this._analyser = null;
+        _this._freqSize = 32;
+        _this._gainNode = null;
+        _this._ac = null;
+        _this._audioId = -1;
+        _this._freqBuff = null;
+        _this._texture = null;
+        return _this;
+      }
+      SceneVisualizeMusic.prototype.onLoad = function() {
+        this.PlayMusicAndStartAnalyse();
+      };
+      SceneVisualizeMusic.prototype.PlayMusicAndStartAnalyse = function() {
+        if (!this.clip) return;
+        var audioId = this._audioId = cc.audioEngine.playMusic(this.clip, true);
+        var audio = cc.audioEngine._id2audio[audioId];
+        var element = null === audio || void 0 === audio ? void 0 : audio._element;
+        var buffer = null === element || void 0 === element ? void 0 : element._buffer;
+        var audioContext = null === element || void 0 === element ? void 0 : element._context;
+        if (!buffer || !audioContext) return;
+        var analyser = this._analyser = null === audioContext || void 0 === audioContext ? void 0 : audioContext.createAnalyser();
+        if (!analyser) {
+          console.warn("Platform not support audio analyse");
+          return;
+        }
+        analyser.fftSize = 2 * this._freqSize;
+        element._gainObj.connect(analyser);
+        this._freqBuff = new Uint8Array(analyser.frequencyBinCount);
+        var gl = cc.game._renderContext;
+        var texture = this._texture = new cc.RenderTexture();
+        var width = analyser.frequencyBinCount;
+        texture.initWithSize(width, 1, gl.STENCIL_INDEX8);
+        texture.packable = false;
+        texture.setFilters(cc.Texture2D.Filter.NEAREST, cc.Texture2D.Filter.NEAREST);
+        texture.initWithData(this._freqBuff, cc.Texture2D.PixelFormat.I8, width, 1);
+        this.sprite.spriteFrame = new cc.SpriteFrame(texture);
+      };
+      SceneVisualizeMusic.prototype.onDestroy = function() {
+        cc.audioEngine.stopMusic();
+      };
+      SceneVisualizeMusic.prototype.update = function() {
+        var analyser = this._analyser;
+        if (!analyser || !this._freqBuff) return;
+        analyser.getByteFrequencyData(this._freqBuff);
+        var texture = this._texture;
+        var opts = texture._getOpts();
+        opts.image = this._freqBuff;
+        opts.format = cc.Texture2D.PixelFormat.I8;
+        this._texture.update(opts);
+      };
+      __decorate([ property(cc.AudioClip) ], SceneVisualizeMusic.prototype, "clip", void 0);
+      __decorate([ property(cc.Sprite) ], SceneVisualizeMusic.prototype, "sprite", void 0);
+      SceneVisualizeMusic = __decorate([ ccclass ], SceneVisualizeMusic);
+      return SceneVisualizeMusic;
+    }(cc.Component);
+    exports.default = SceneVisualizeMusic;
+    cc._RF.pop();
+  }, {} ],
   SceneWelcome: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "8efa3lyFNdPHJ6ND0fspcQz", "SceneWelcome");
@@ -2787,4 +2883,4 @@ window.__require = function e(t, n, r) {
   }, {
     "./SpriteMaskedAvatarAssembler": "SpriteMaskedAvatarAssembler"
   } ]
-}, {}, [ "SceneTestGraphics", "SceneSpriteMaskedAvatars", "AvatarAssembler", "AvatarSprite", "EqualScalingAssembler", "EqualScalingSprite", "SpriteMaskedAvatarAssembler", "SpriteMaskedAvatarSprite", "CAParser", "SceneCellularAutomata", "MovingBGAssembler", "MovingBGSprite", "LayeredBatchingAssembler", "LayeredBatchingRootRenderer", "SceneLayeredBatchingScrollView", "SceneMetaBalls", "MetaBallsAssembler", "MetaBallsRenderer", "SceneParticlesBatching", "SDF", "SceneSDF", "NavigatorButton", "SimpleDraggable", "SceneLoad", "SceneTest", "SceneWelcome", "GTAssembler2D", "GTAutoFitSpriteAssembler2D", "GTSimpleSpriteAssembler2D" ]);
+}, {}, [ "SceneTestGraphics", "SceneSpriteMaskedAvatars", "AvatarAssembler", "AvatarSprite", "EqualScalingAssembler", "EqualScalingSprite", "SpriteMaskedAvatarAssembler", "SpriteMaskedAvatarSprite", "CAParser", "SceneCellularAutomata", "MovingBGAssembler", "MovingBGSprite", "LayeredBatchingAssembler", "LayeredBatchingRootRenderer", "SceneLayeredBatchingScrollView", "SceneMetaBalls", "MetaBallsAssembler", "MetaBallsRenderer", "SceneParticlesBatching", "SDF", "SceneSDF", "SceneVisualizeMusic", "NavigatorButton", "SimpleDraggable", "SceneLoad", "SceneTest", "SceneWelcome", "GTAssembler2D", "GTAutoFitSpriteAssembler2D", "GTSimpleSpriteAssembler2D" ]);
