@@ -86,10 +86,10 @@
           "__id__": 7
         },
         {
-          "__id__": 20
+          "__id__": 23
         },
         {
-          "__id__": 21
+          "__id__": 24
         },
         {
           "__type__": "cc.Node",
@@ -193,7 +193,7 @@
         "array": [
           0,
           0,
-          637.8269869945815,
+          839.7469454383546,
           0,
           0,
           0,
@@ -372,6 +372,9 @@
         },
         {
           "__id__": 17
+        },
+        {
+          "__id__": 20
         }
       ],
       "_trs": {
@@ -907,8 +910,8 @@
         "__type__": "TypedArray",
         "ctor": "Float64Array",
         "array": [
-          -182.05,
-          -138.647,
+          -182,
+          -139,
           0,
           0,
           0,
@@ -1253,6 +1256,221 @@
     },
     {
       "__type__": "cc.Node",
+      "_name": "SceneVisualizeMusic",
+      "_parent": {
+        "__id__": 7
+      },
+      "_children": [
+        {
+          "__id__": 21
+        }
+      ],
+      "_components": [
+        {
+          "__type__": "cc.Button",
+          "node": {
+            "__id__": 20
+          },
+          "clickEvents": [
+            {
+              "__type__": "cc.ClickEvent",
+              "target": {
+                "__id__": 2
+              },
+              "_componentId": "8efa3lyFNdPHJ6ND0fspcQz",
+              "handler": "onBtnClick"
+            }
+          ],
+          "_N$transition": 2,
+          "transition": 2,
+          "_N$normalColor": {
+            "__type__": "cc.Color",
+            "r": 230,
+            "g": 230,
+            "b": 230
+          },
+          "_N$pressedColor": {
+            "__type__": "cc.Color",
+            "r": 200,
+            "g": 200,
+            "b": 200
+          },
+          "pressedColor": {
+            "__type__": "cc.Color",
+            "r": 200,
+            "g": 200,
+            "b": 200
+          },
+          "_N$disabledColor": {
+            "__type__": "cc.Color",
+            "r": 120,
+            "g": 120,
+            "b": 120,
+            "a": 200
+          },
+          "_N$normalSprite": {
+            "__uuid__": "f0BIwQ8D5Ml7nTNQbh1YlS"
+          },
+          "_N$pressedSprite": {
+            "__uuid__": "e97GVMl6JHh5Ml5qEDdSGa"
+          },
+          "pressedSprite": {
+            "__uuid__": "e97GVMl6JHh5Ml5qEDdSGa"
+          },
+          "_N$hoverSprite": {
+            "__uuid__": "f0BIwQ8D5Ml7nTNQbh1YlS"
+          },
+          "hoverSprite": {
+            "__uuid__": "f0BIwQ8D5Ml7nTNQbh1YlS"
+          },
+          "_N$disabledSprite": {
+            "__uuid__": "29FYIk+N1GYaeWH/q1NxQO"
+          },
+          "_N$target": {
+            "__id__": 21
+          }
+        }
+      ],
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 200,
+        "height": 40
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          -182,
+          -410,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "Background",
+      "_objFlags": 512,
+      "_parent": {
+        "__id__": 20
+      },
+      "_children": [
+        {
+          "__id__": 22
+        }
+      ],
+      "_components": [
+        {
+          "__type__": "cc.Sprite",
+          "node": {
+            "__id__": 21
+          },
+          "_materials": [
+            {
+              "__uuid__": "ecpdLyjvZBwrvm+cedCcQy"
+            }
+          ],
+          "_spriteFrame": {
+            "__uuid__": "f0BIwQ8D5Ml7nTNQbh1YlS"
+          },
+          "_type": 1,
+          "_sizeMode": 0
+        },
+        {
+          "__type__": "cc.Widget",
+          "node": {
+            "__id__": 21
+          },
+          "alignMode": 0,
+          "_alignFlags": 45,
+          "_originalWidth": 100,
+          "_originalHeight": 40
+        }
+      ],
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 200,
+        "height": 40
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "Label",
+      "_objFlags": 512,
+      "_parent": {
+        "__id__": 21
+      },
+      "_components": [
+        {
+          "__type__": "cc.Label",
+          "node": {
+            "__id__": 22
+          },
+          "_materials": [
+            {
+              "__uuid__": "ecpdLyjvZBwrvm+cedCcQy"
+            }
+          ],
+          "_useOriginalSize": false,
+          "_string": "音频可视化",
+          "_N$string": "音频可视化",
+          "_fontSize": 20,
+          "_enableWrapText": false,
+          "_N$horizontalAlign": 1,
+          "_N$verticalAlign": 1,
+          "_N$overflow": 1,
+          "_N$cacheMode": 1
+        }
+      ],
+      "_color": {
+        "__type__": "cc.Color"
+      },
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 246,
+        "height": 40
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
       "_name": "github",
       "_parent": {
         "__id__": 2
@@ -1261,7 +1479,7 @@
         {
           "__type__": "cc.Label",
           "node": {
-            "__id__": 20
+            "__id__": 23
           },
           "_materials": [
             {
@@ -1312,14 +1530,14 @@
       },
       "_children": [
         {
-          "__id__": 22
+          "__id__": 25
         }
       ],
       "_components": [
         {
           "__type__": "cc.Button",
           "node": {
-            "__id__": 21
+            "__id__": 24
           },
           "_N$transition": 3,
           "transition": 3,
@@ -1367,20 +1585,20 @@
             "__uuid__": "29FYIk+N1GYaeWH/q1NxQO"
           },
           "_N$target": {
-            "__id__": 22
+            "__id__": 25
           }
         },
         {
           "__type__": "58a22OqN5RI3plga6Z+CurZ",
           "node": {
-            "__id__": 21
+            "__id__": 24
           }
         }
       ],
       "_prefab": {
         "__type__": "cc.PrefabInfo",
         "root": {
-          "__id__": 21
+          "__id__": 24
         },
         "asset": {
           "__uuid__": "6dpCGuOsFJSI1lksMDQfLz"
@@ -1414,18 +1632,18 @@
       "_name": "Background",
       "_objFlags": 512,
       "_parent": {
-        "__id__": 21
+        "__id__": 24
       },
       "_children": [
         {
-          "__id__": 23
+          "__id__": 26
         }
       ],
       "_components": [
         {
           "__type__": "cc.Sprite",
           "node": {
-            "__id__": 22
+            "__id__": 25
           },
           "_materials": [
             {
@@ -1441,7 +1659,7 @@
         {
           "__type__": "cc.Widget",
           "node": {
-            "__id__": 22
+            "__id__": 25
           },
           "alignMode": 0,
           "_alignFlags": 45,
@@ -1452,7 +1670,7 @@
       "_prefab": {
         "__type__": "cc.PrefabInfo",
         "root": {
-          "__id__": 21
+          "__id__": 24
         },
         "asset": {
           "__uuid__": "6dpCGuOsFJSI1lksMDQfLz"
@@ -1486,13 +1704,13 @@
       "_name": "Label",
       "_objFlags": 512,
       "_parent": {
-        "__id__": 22
+        "__id__": 25
       },
       "_components": [
         {
           "__type__": "cc.Label",
           "node": {
-            "__id__": 23
+            "__id__": 26
           },
           "_materials": [
             {
@@ -1511,7 +1729,7 @@
       "_prefab": {
         "__type__": "cc.PrefabInfo",
         "root": {
-          "__id__": 21
+          "__id__": 24
         },
         "asset": {
           "__uuid__": "6dpCGuOsFJSI1lksMDQfLz"

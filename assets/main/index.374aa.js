@@ -418,6 +418,133 @@ window.__require = function e(t, n, r) {
   }, {
     "./EqualScalingAssembler": "EqualScalingAssembler"
   } ],
+  FFTTextureGenerator2: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "0482cd2IE5Mab/KY5yMKIb2", "FFTTextureGenerator2");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    var SceneVisualizeMusic_1 = require("./SceneVisualizeMusic");
+    var fs, PNG;
+    false;
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property, menu = _a.menu, inspector = _a.inspector, executeInEditMode = _a.executeInEditMode, requireComponent = _a.requireComponent;
+    var FFTTextureGenerator2 = function(_super) {
+      __extends(FFTTextureGenerator2, _super);
+      function FFTTextureGenerator2() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this._clip = null;
+        _this._analyser = null;
+        _this._freqSize = 32;
+        _this._fftTexture = null;
+        _this._sampleBuff = null;
+        _this._sourceNode = null;
+        return _this;
+      }
+      FFTTextureGenerator2.prototype.HandleInspectorClick = function() {
+        return;
+        var scene;
+        var clip;
+      };
+      FFTTextureGenerator2.prototype.WriteFrame = function(fftTexture, frame, buff) {
+        var sampleLength = buff.length;
+        var samplePerRow = 512 / sampleLength;
+        var audio = this._clip._audio;
+        var elapseInSec = audio.length / audio.sampleRate;
+        var samples = Math.floor(60 * elapseInSec);
+        var sx = frame * sampleLength;
+        if (sx + sampleLength > fftTexture.length) {
+          console.error("fftTexture overflow");
+          return;
+        }
+        fftTexture.set(buff, sx);
+      };
+      FFTTextureGenerator2.prototype.ExtractFFTAndSave = function() {
+        var audio = this._clip._audio;
+        var offlineAudioCtx = new OfflineAudioContext(audio.numberOfChannels, audio.length, audio.sampleRate);
+        var analyser = this._analyser = offlineAudioCtx.createAnalyser();
+        analyser.fftSize = 2 * this._freqSize;
+        var sourceNode = this._sourceNode = offlineAudioCtx.createBufferSource();
+        sourceNode.buffer = audio;
+        sourceNode.connect(analyser);
+        analyser.connect(offlineAudioCtx.destination);
+        var elapseInSec = audio.length / audio.sampleRate;
+        var originSamples = Math.floor(60 * elapseInSec);
+        var bytesPerSample = analyser.frequencyBinCount;
+        var sampleBuff = this._sampleBuff = new Uint8Array(bytesPerSample);
+        var samplePerRow = 512 / bytesPerSample;
+        var samples = Math.ceil(originSamples / samplePerRow) * samplePerRow;
+        var fftTexture = this._fftTexture = new Uint8Array(samples * bytesPerSample);
+        console.log("texture width: 512, height: " + fftTexture.length / 512 + ", samples: " + samples + ", samplePerRow: " + samplePerRow);
+        var _loop_1 = function(i) {
+          offlineAudioCtx.suspend(i / 60).then(function() {
+            analyser.getByteFrequencyData(sampleBuff);
+            that.WriteFrame(fftTexture, i, sampleBuff);
+          }).then(function() {
+            offlineAudioCtx.resume();
+          });
+        };
+        for (var i = 0; i < originSamples; ++i) _loop_1(i);
+        var that = this;
+        offlineAudioCtx.startRendering();
+        offlineAudioCtx.oncomplete = function(ev) {
+          sourceNode.stop();
+          that.SaveFFTTexture(fftTexture, 512, fftTexture.length / 512);
+          that.ReleaseAudioBuffer();
+          console.log("finished without error");
+        };
+        sourceNode.start(0);
+      };
+      FFTTextureGenerator2.prototype.SaveFFTTexture = function(texture, width, height) {
+        var img = new PNG({
+          colorType: 0,
+          inputColorType: 0,
+          width: width,
+          height: height
+        });
+        img.data = texture;
+        img.pack().pipe(fs.createWriteStream("F:/workspace/CCBatchingTricks/aa.png"));
+      };
+      FFTTextureGenerator2.prototype.ReleaseAudioBuffer = function() {
+        this._clip = null;
+        this._analyser = null;
+        this._fftTexture = null;
+        this._sampleBuff = null;
+        this._sourceNode = null;
+      };
+      FFTTextureGenerator2 = __decorate([ ccclass, executeInEditMode, menu("control-inspector/fft-texture-generator"), inspector("packages://control-inspector/fft-texture-generator.js") ], FFTTextureGenerator2);
+      return FFTTextureGenerator2;
+    }(cc.Component);
+    exports.default = FFTTextureGenerator2;
+    cc._RF.pop();
+  }, {
+    "./SceneVisualizeMusic": "SceneVisualizeMusic",
+    fs: void 0
+  } ],
   GTAssembler2D: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "ec2e84JLsNF8Z3zxl9otwbJ", "GTAssembler2D");
@@ -1353,6 +1480,197 @@ window.__require = function e(t, n, r) {
   }, {
     "./MovingBGAssembler": "MovingBGAssembler"
   } ],
+  MusicVisualizerH5: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "8ecb5qS6zJHRpXqyUByvOxY", "MusicVisualizerH5");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var MusicVisualzierH5 = function(_super) {
+      __extends(MusicVisualzierH5, _super);
+      function MusicVisualzierH5() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this._audioId = -1;
+        _this._analyser = null;
+        _this._freqSize = 32;
+        _this._gainNode = null;
+        _this._ac = null;
+        _this._sampleBuff = null;
+        _this._fftSampleTexture = null;
+        return _this;
+      }
+      MusicVisualzierH5.prototype.onLoad = function() {};
+      MusicVisualzierH5.prototype.onDestroy = function() {};
+      MusicVisualzierH5.prototype.SyncAudio = function(audioId, fft, samplePerRow) {
+        this._audioId = audioId;
+        this.FlushMatProperties(this);
+        this.StartAnalyse(audioId);
+      };
+      MusicVisualzierH5.prototype.FlushMatProperties = function(sprite) {};
+      MusicVisualzierH5.prototype.StartAnalyse = function(audioId) {
+        var audio = cc.audioEngine._id2audio[audioId];
+        var element = null === audio || void 0 === audio ? void 0 : audio._element;
+        var buffer = null === element || void 0 === element ? void 0 : element._buffer;
+        var audioContext = null === element || void 0 === element ? void 0 : element._context;
+        if (!buffer || !audioContext) return;
+        var analyser = this._analyser = null === audioContext || void 0 === audioContext ? void 0 : audioContext.createAnalyser();
+        if (!analyser) {
+          console.warn("Platform not support audio analyse");
+          return;
+        }
+        analyser.fftSize = 2 * this._freqSize;
+        element._gainObj.connect(analyser);
+        this._sampleBuff = new Uint8Array(analyser.frequencyBinCount);
+        var gl = cc.game._renderContext;
+        var texture = this._fftSampleTexture = new cc.RenderTexture();
+        var width = analyser.frequencyBinCount;
+        texture.initWithSize(width, 1, gl.STENCIL_INDEX8);
+        texture.packable = false;
+        texture.setFilters(cc.Texture2D.Filter.NEAREST, cc.Texture2D.Filter.NEAREST);
+        texture.initWithData(this._sampleBuff, cc.Texture2D.PixelFormat.I8, width, 1);
+        this.spriteFrame = new cc.SpriteFrame(texture);
+      };
+      MusicVisualzierH5.prototype.update = function() {
+        if (-1 === this._audioId) return;
+        var analyser = this._analyser;
+        if (!analyser || !this._sampleBuff) return;
+        analyser.getByteFrequencyData(this._sampleBuff);
+        var texture = this._fftSampleTexture;
+        var opts = texture._getOpts();
+        opts.image = this._sampleBuff;
+        opts.format = cc.Texture2D.PixelFormat.I8;
+        opts.genMipmaps = true;
+        texture.update(opts);
+      };
+      MusicVisualzierH5 = __decorate([ ccclass ], MusicVisualzierH5);
+      return MusicVisualzierH5;
+    }(cc.Sprite);
+    exports.default = MusicVisualzierH5;
+    cc._RF.pop();
+  }, {} ],
+  MusicVisualizer: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "5d6a2fHfPhNJYwz2SdIkrY+", "MusicVisualizer");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var MusicVisualizer = function(_super) {
+      __extends(MusicVisualizer, _super);
+      function MusicVisualizer() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this._audioId = -1;
+        _this._samplePerRow = 16;
+        return _this;
+      }
+      Object.defineProperty(MusicVisualizer.prototype, "fft", {
+        get: function() {
+          return this.spriteFrame;
+        },
+        set: function(value) {
+          if (value) {
+            var texture = value.getTexture();
+            texture.setFilters(cc.Texture2D.Filter.NEAREST, cc.Texture2D.Filter.NEAREST);
+            texture.packable = false;
+          }
+          this.spriteFrame = value;
+        },
+        enumerable: false,
+        configurable: true
+      });
+      MusicVisualizer.prototype.onLoad = function() {};
+      MusicVisualizer.prototype.onDestroy = function() {};
+      MusicVisualizer.prototype.SyncAudio = function(audioId, fft, samplePerRow) {
+        this._audioId = audioId;
+        if (void 0 !== fft) {
+          var texture = fft.getTexture();
+          texture.setFilters(cc.Texture2D.Filter.NEAREST, cc.Texture2D.Filter.NEAREST);
+          texture.packable = false;
+          this.fft = fft;
+        }
+        void 0 !== samplePerRow && (this._samplePerRow = samplePerRow);
+      };
+      MusicVisualizer.prototype.UpdateFFTShader = function(sprite, frame) {
+        var _a, _b;
+        var textureHeight = (null === (_b = null === (_a = null === sprite || void 0 === sprite ? void 0 : sprite.spriteFrame) || void 0 === _a ? void 0 : _a.getTexture()) || void 0 === _b ? void 0 : _b.height) || 1;
+        var samplePerRow = this._samplePerRow;
+        var row = (Math.floor(frame / samplePerRow) + .5) / textureHeight;
+        var startCol = frame % samplePerRow / samplePerRow;
+        var endCol = (frame % samplePerRow + 1) / samplePerRow;
+        var mat = sprite.getMaterial(0);
+        if (mat) {
+          mat.setProperty("row", row);
+          mat.setProperty("startCol", startCol);
+          mat.setProperty("endCol", endCol);
+        }
+      };
+      MusicVisualizer.prototype.update = function() {
+        if (-1 === this._audioId) return;
+        var t = cc.audioEngine.getCurrentTime(this._audioId);
+        var frame = Math.floor(60 * t);
+        this.UpdateFFTShader(this, frame);
+      };
+      __decorate([ property({
+        type: cc.SpriteFrame,
+        displayName: "FFT\u7eb9\u7406"
+      }) ], MusicVisualizer.prototype, "fft", null);
+      MusicVisualizer = __decorate([ ccclass ], MusicVisualizer);
+      return MusicVisualizer;
+    }(cc.Sprite);
+    exports.default = MusicVisualizer;
+    cc._RF.pop();
+  }, {} ],
   NavigatorButton: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "58a22OqN5RI3plga6Z+CurZ", "NavigatorButton");
@@ -1818,6 +2136,200 @@ window.__require = function e(t, n, r) {
   }, {
     "./CAParser": "CAParser"
   } ],
+  SceneDrawingBoard: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "2310cj/T4ZHua1DcDcsflm5", "SceneDrawingBoard");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var RenderBuff = function() {
+      function RenderBuff() {
+        this.texture = null;
+        this.spriteFrame = null;
+        this.cameraNode = null;
+        this.camera = null;
+      }
+      RenderBuff.CreateComputeBuff = function(width, height) {
+        var result = new RenderBuff();
+        var texture = result.texture = new cc.RenderTexture();
+        texture.packable = false;
+        texture.setFilters(cc.Texture2D.Filter.NEAREST, cc.Texture2D.Filter.NEAREST);
+        texture.initWithSize(width, height);
+        result.spriteFrame = new cc.SpriteFrame(texture);
+        return result;
+      };
+      RenderBuff.CreateRederBuff = function(width, height) {
+        var result = new RenderBuff();
+        var texture = result.texture = new cc.RenderTexture();
+        texture.packable = false;
+        texture.initWithSize(width, height);
+        result.spriteFrame = new cc.SpriteFrame(texture);
+        return result;
+      };
+      RenderBuff.prototype.Clear = function() {
+        var texture = this.texture;
+        var opts = texture._getOpts();
+        var size = texture.width * texture.height;
+        opts.image = new Uint8Array(4 * size);
+        texture.update(opts);
+      };
+      return RenderBuff;
+    }();
+    var SceneTest = function(_super) {
+      __extends(SceneTest, _super);
+      function SceneTest() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this.board = null;
+        _this.pen = null;
+        _this.singlePass = null;
+        _this.matCapsule = null;
+        _this.matBezier = null;
+        _this._autoRender = true;
+        _this._renderBuffMap = new Map();
+        _this._isDragging = false;
+        _this._points = [];
+        _this._colorIndex = 0;
+        _this._colors = [ cc.Color.WHITE, cc.Color.RED, cc.Color.GREEN, cc.Color.BLUE, cc.Color.YELLOW, cc.Color.CYAN ];
+        return _this;
+      }
+      SceneTest.prototype.onLoad = function() {
+        var renderBuff = RenderBuff.CreateRederBuff(this.board.width, this.board.height);
+        var sprite = this.board.getComponent(cc.Sprite);
+        sprite.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+        sprite.spriteFrame = renderBuff.spriteFrame;
+        this._renderBuffMap.set(this.board, renderBuff);
+        this.board.on(cc.Node.EventType.TOUCH_START, this.OnBoardTouchStart, this);
+        this.board.on(cc.Node.EventType.TOUCH_MOVE, this.OnBoardTouchMove, this);
+        this.board.on(cc.Node.EventType.TOUCH_END, this.OnBoardTouchEnd, this);
+        this.board.on(cc.Node.EventType.TOUCH_CANCEL, this.OnBoardTouchEnd, this);
+      };
+      SceneTest.prototype.start = function() {};
+      SceneTest.prototype.OnRender = function() {
+        this.RenderToNode(this.pen, this.board);
+      };
+      SceneTest.prototype.SetBlendEqToMax = function(mat) {
+        var gl = cc.game._renderContext;
+        var gfx = cc.gfx;
+        var ext = gl.getExtension("EXT_blend_minmax");
+        null === mat || void 0 === mat ? void 0 : mat.setBlend(true, ext.MAX_EXT, gfx.BLEND_SRC_ALPHA, gfx.BLEND_ONE_MINUS_SRC_ALPHA, ext.MAX_EXT, gfx.BLEND_SRC_ALPHA, gfx.BLEND_ONE_MINUS_SRC_ALPHA, 4294967295, 0);
+      };
+      SceneTest.prototype.update = function() {
+        var points = this._points;
+        if (points.length < 3) return;
+        var A = points[0];
+        var B = points[1];
+        var C = points[2];
+        var sprite = this.singlePass;
+        var useBezier = true;
+        if (useBezier) {
+          sprite.setMaterial(0, this.matBezier);
+          var mat = sprite.getComponent(cc.Sprite).getMaterial(0);
+          this.SetBlendEqToMax(mat);
+          B = B.mul(4);
+          B.subSelf(A).subSelf(C).divSelf(2);
+          mat.setProperty("PA", [ A.x, A.y ]);
+          mat.setProperty("PB", [ B.x, B.y ]);
+          mat.setProperty("PC", [ C.x, C.y ]);
+        } else {
+          sprite.setMaterial(0, this.matCapsule);
+          var mat = sprite.getComponent(cc.Sprite).getMaterial(0);
+          this.SetBlendEqToMax(mat);
+          mat.setProperty("PP", [ A.x, A.y, B.x, B.y ]);
+        }
+        sprite.enabled = true;
+        this._colorIndex = (this._colorIndex + 1) % this._colors.length;
+        this.RenderToNode(sprite.node, this.board);
+        sprite.enabled = false;
+        this._points.shift();
+        return;
+      };
+      SceneTest.prototype.TouchPosToPassPos = function(pos) {
+        var node = this.singlePass.node;
+        node.convertToNodeSpaceAR(pos, pos);
+        pos.x /= node.width;
+        pos.y /= node.height;
+        pos.mulSelf(2);
+        pos.y *= node.height / node.width;
+        return pos;
+      };
+      SceneTest.prototype.OnBoardTouchStart = function(e) {
+        this._isDragging = true;
+        this._points.length = 0;
+        this._points.push(this.TouchPosToPassPos(e.getLocation()));
+      };
+      SceneTest.prototype.OnBoardTouchMove = function(e) {
+        if (!this._isDragging) return;
+        var cur = this.TouchPosToPassPos(e.getLocation());
+        this._points.push(cur);
+      };
+      SceneTest.prototype.OnBoardTouchEnd = function() {
+        this._isDragging = false;
+        this._points.length = 0;
+      };
+      SceneTest.prototype.RenderToNode = function(root, target) {
+        var renderBuff = this._renderBuffMap.get(target);
+        if (!renderBuff) return null;
+        if (!renderBuff.cameraNode || !renderBuff.camera) {
+          var node = renderBuff.cameraNode = new cc.Node();
+          node.parent = target;
+          node.x = (.5 - target.anchorX) * target.width;
+          node.y = (.5 - target.anchorY) * target.height;
+          var camera_1 = renderBuff.camera = node.addComponent(cc.Camera);
+          camera_1.backgroundColor = new cc.Color(255, 255, 255, 0);
+          camera_1.cullingMask = 4294967295;
+          var targetHeight = root.height;
+          camera_1.alignWithScreen = true;
+          camera_1.orthoSize = targetHeight / 2;
+          camera_1.targetTexture = renderBuff.texture;
+        }
+        var success = false;
+        var camera = renderBuff.camera;
+        try {
+          camera.enabled = true;
+          camera.render(root);
+          success = true;
+        } finally {
+          camera.enabled = false;
+        }
+        return renderBuff.texture;
+      };
+      __decorate([ property(cc.Node) ], SceneTest.prototype, "board", void 0);
+      __decorate([ property(cc.Node) ], SceneTest.prototype, "pen", void 0);
+      __decorate([ property(cc.Sprite) ], SceneTest.prototype, "singlePass", void 0);
+      __decorate([ property(cc.Material) ], SceneTest.prototype, "matCapsule", void 0);
+      __decorate([ property(cc.Material) ], SceneTest.prototype, "matBezier", void 0);
+      SceneTest = __decorate([ ccclass ], SceneTest);
+      return SceneTest;
+    }(cc.Component);
+    exports.default = SceneTest;
+    cc._RF.pop();
+  }, {} ],
   SceneLayeredBatchingScrollView: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "a8e90q5ybRNipx0efwIGCPq", "SceneLayeredBatchingScrollView");
@@ -2509,64 +3021,166 @@ window.__require = function e(t, n, r) {
       value: true
     });
     var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var RenderBuff = function() {
+      function RenderBuff() {
+        this.texture = null;
+        this.spriteFrame = null;
+        this.cameraNode = null;
+        this.camera = null;
+      }
+      RenderBuff.CreateComputeBuff = function(width, height) {
+        var result = new RenderBuff();
+        var texture = result.texture = new cc.RenderTexture();
+        texture.packable = false;
+        texture.setFilters(cc.Texture2D.Filter.NEAREST, cc.Texture2D.Filter.NEAREST);
+        texture.initWithSize(width, height);
+        result.spriteFrame = new cc.SpriteFrame(texture);
+        return result;
+      };
+      RenderBuff.prototype.Clear = function() {
+        var texture = this.texture;
+        var opts = texture._getOpts();
+        var size = texture.width * texture.height;
+        opts.image = new Uint8Array(4 * size);
+        texture.update(opts);
+      };
+      return RenderBuff;
+    }();
     var SceneVisualizeMusic = function(_super) {
       __extends(SceneVisualizeMusic, _super);
       function SceneVisualizeMusic() {
         var _this = null !== _super && _super.apply(this, arguments) || this;
-        _this.clip = null;
-        _this.sprite = null;
-        _this._analyser = null;
-        _this._freqSize = 32;
-        _this._gainNode = null;
-        _this._ac = null;
+        _this.clips = [];
+        _this.fftTextures = [];
+        _this.visualizer = null;
+        _this.visualizerH5 = null;
+        _this.visualizerEx = null;
+        _this.pass0Imgs = [];
+        _this.materials = [];
+        _this.pass0Materials = [];
+        _this._audioIndex = -1;
+        _this._matIndex = -1;
+        _this._renderBuffMap = new Map();
+        _this._nameToMat = new Map();
+        _this._nameToPass0Mat = new Map();
+        _this._matDep = new Map();
         _this._audioId = -1;
-        _this._freqBuff = null;
-        _this._texture = null;
+        _this._srcIndex = 0;
         return _this;
       }
       SceneVisualizeMusic.prototype.onLoad = function() {
-        this.PlayMusicAndStartAnalyse();
-      };
-      SceneVisualizeMusic.prototype.PlayMusicAndStartAnalyse = function() {
-        if (!this.clip) return;
-        var audioId = this._audioId = cc.audioEngine.playMusic(this.clip, true);
-        var audio = cc.audioEngine._id2audio[audioId];
-        var element = null === audio || void 0 === audio ? void 0 : audio._element;
-        var buffer = null === element || void 0 === element ? void 0 : element._buffer;
-        var audioContext = null === element || void 0 === element ? void 0 : element._context;
-        if (!buffer || !audioContext) return;
-        var analyser = this._analyser = null === audioContext || void 0 === audioContext ? void 0 : audioContext.createAnalyser();
-        if (!analyser) {
-          console.warn("Platform not support audio analyse");
-          return;
+        for (var _i = 0, _a = this.materials; _i < _a.length; _i++) {
+          var m = _a[_i];
+          this._nameToMat.set(m.name, m);
         }
-        analyser.fftSize = 2 * this._freqSize;
-        element._gainObj.connect(analyser);
-        this._freqBuff = new Uint8Array(analyser.frequencyBinCount);
-        var gl = cc.game._renderContext;
-        var texture = this._texture = new cc.RenderTexture();
-        var width = analyser.frequencyBinCount;
-        texture.initWithSize(width, 1, gl.STENCIL_INDEX8);
-        texture.packable = false;
-        texture.setFilters(cc.Texture2D.Filter.NEAREST, cc.Texture2D.Filter.NEAREST);
-        texture.initWithData(this._freqBuff, cc.Texture2D.PixelFormat.I8, width, 1);
-        this.sprite.spriteFrame = new cc.SpriteFrame(texture);
+        for (var _b = 0, _c = this.pass0Materials; _b < _c.length; _b++) {
+          var m = _c[_b];
+          this._nameToPass0Mat.set(m.name, m);
+        }
+        this._matDep.set("VMWaveFFT", "VMPolarExPass0").set("VMPolarWave", "VMPolarExPass0").set("VMPolarEx", "VMPolarExPass0").set("VMPolar", "VMClassicFFTExPass0").set("VMMeter", "VMClassicFFTExPass0").set("VMClassic", "VMClassicFFTExPass0").set("VMCircle", "VMClassicFFTExPass0");
+        this.NextAudio();
+        this.NextMat();
+      };
+      SceneVisualizeMusic.prototype.NextMat = function() {
+        var _a;
+        if (0 === this.materials.length) return;
+        var index = this._matIndex = (this._matIndex + 1) % this.materials.length;
+        var mat = this.materials[index];
+        var matDep = this._nameToPass0Mat.get(this._matDep.get(mat.name));
+        for (var _i = 0, _b = this.pass0Imgs; _i < _b.length; _i++) {
+          var img = _b[_i];
+          img.setMaterial(0, matDep);
+          img.spriteFrame = this.fftTextures[this._audioIndex];
+          var renderBuff = this._renderBuffMap.get(img.node);
+          if (renderBuff) renderBuff.Clear(); else {
+            renderBuff = RenderBuff.CreateComputeBuff(img.node.width, img.node.height);
+            this._renderBuffMap.set(img.node, renderBuff);
+          }
+          null === (_a = img.getMaterial(0)) || void 0 === _a ? void 0 : _a.setProperty("tex2", renderBuff.texture);
+        }
+        this.visualizerEx.setMaterial(0, mat);
+      };
+      SceneVisualizeMusic.prototype.NextAudio = function() {
+        if (0 === this.clips.length || this.fftTextures.length !== this.clips.length) return;
+        var index = this._audioIndex = (this._audioIndex + 1) % this.clips.length;
+        var audioId = this._audioId = cc.audioEngine.playMusic(this.clips[index], true);
+        for (var _i = 0, _a = this.pass0Imgs; _i < _a.length; _i++) {
+          var img = _a[_i];
+          img.spriteFrame = this.fftTextures[index];
+        }
+      };
+      SceneVisualizeMusic.prototype.UpdateFFTShader = function(sprite, frame) {
+        var _a, _b;
+        var textureHeight = (null === (_b = null === (_a = null === sprite || void 0 === sprite ? void 0 : sprite.spriteFrame) || void 0 === _a ? void 0 : _a.getTexture()) || void 0 === _b ? void 0 : _b.height) || 1;
+        var samplePerRow = 16;
+        var row = (Math.floor(frame / samplePerRow) + .5) / textureHeight;
+        var startCol = frame % samplePerRow / samplePerRow;
+        var endCol = (frame % samplePerRow + 1) / samplePerRow;
+        var mat = sprite.getMaterial(0);
+        if (mat) {
+          mat.setProperty("row", row);
+          mat.setProperty("startCol", startCol);
+          mat.setProperty("endCol", endCol);
+        }
+      };
+      SceneVisualizeMusic.prototype.Tick = function() {
+        var _a;
+        if (-1 === this._audioId) return;
+        var t = cc.audioEngine.getCurrentTime(this._audioId);
+        var frame = Math.floor(60 * t);
+        var pass0Imgs = this.pass0Imgs;
+        var order = this._srcIndex;
+        var from = pass0Imgs[order];
+        var to = pass0Imgs[1 - order];
+        this.UpdateFFTShader(from, frame);
+        from.enabled = true;
+        this.RenderToNode(from.node, to.node);
+        from.enabled = false;
+        this.visualizerEx.spriteFrame = null === (_a = this._renderBuffMap.get(to.node)) || void 0 === _a ? void 0 : _a.spriteFrame;
+        this._srcIndex = 1 - this._srcIndex;
       };
       SceneVisualizeMusic.prototype.onDestroy = function() {
         cc.audioEngine.stopMusic();
       };
       SceneVisualizeMusic.prototype.update = function() {
-        var analyser = this._analyser;
-        if (!analyser || !this._freqBuff) return;
-        analyser.getByteFrequencyData(this._freqBuff);
-        var texture = this._texture;
-        var opts = texture._getOpts();
-        opts.image = this._freqBuff;
-        opts.format = cc.Texture2D.PixelFormat.I8;
-        this._texture.update(opts);
+        this.Tick();
       };
-      __decorate([ property(cc.AudioClip) ], SceneVisualizeMusic.prototype, "clip", void 0);
-      __decorate([ property(cc.Sprite) ], SceneVisualizeMusic.prototype, "sprite", void 0);
+      SceneVisualizeMusic.prototype.RenderToNode = function(root, target) {
+        var renderBuff = this._renderBuffMap.get(target);
+        if (!renderBuff) return null;
+        if (!renderBuff.cameraNode || !renderBuff.camera) {
+          var node = renderBuff.cameraNode = new cc.Node();
+          node.parent = root;
+          node.x = (.5 - root.anchorX) * root.width;
+          node.y = (.5 - root.anchorY) * root.height;
+          var camera_1 = renderBuff.camera = node.addComponent(cc.Camera);
+          camera_1.backgroundColor = new cc.Color(255, 255, 255, 0);
+          camera_1.clearFlags = cc.Camera.ClearFlags.DEPTH | cc.Camera.ClearFlags.STENCIL | cc.Camera.ClearFlags.COLOR;
+          camera_1.cullingMask = 4294967295;
+          var targetHeight = root.height;
+          camera_1.alignWithScreen = false;
+          camera_1.orthoSize = targetHeight / 2;
+          camera_1.targetTexture = renderBuff.texture;
+        }
+        var success = false;
+        var camera = renderBuff.camera;
+        try {
+          camera.enabled = true;
+          camera.render(root);
+          success = true;
+        } finally {
+          camera.enabled = false;
+        }
+        return renderBuff.texture;
+      };
+      __decorate([ property([ cc.AudioClip ]) ], SceneVisualizeMusic.prototype, "clips", void 0);
+      __decorate([ property([ cc.SpriteFrame ]) ], SceneVisualizeMusic.prototype, "fftTextures", void 0);
+      __decorate([ property(cc.Node) ], SceneVisualizeMusic.prototype, "visualizer", void 0);
+      __decorate([ property(cc.Node) ], SceneVisualizeMusic.prototype, "visualizerH5", void 0);
+      __decorate([ property(cc.Sprite) ], SceneVisualizeMusic.prototype, "visualizerEx", void 0);
+      __decorate([ property([ cc.Sprite ]) ], SceneVisualizeMusic.prototype, "pass0Imgs", void 0);
+      __decorate([ property([ cc.Material ]) ], SceneVisualizeMusic.prototype, "materials", void 0);
+      __decorate([ property([ cc.Material ]) ], SceneVisualizeMusic.prototype, "pass0Materials", void 0);
       SceneVisualizeMusic = __decorate([ ccclass ], SceneVisualizeMusic);
       return SceneVisualizeMusic;
     }(cc.Component);
@@ -2883,4 +3497,4 @@ window.__require = function e(t, n, r) {
   }, {
     "./SpriteMaskedAvatarAssembler": "SpriteMaskedAvatarAssembler"
   } ]
-}, {}, [ "SceneTestGraphics", "SceneSpriteMaskedAvatars", "AvatarAssembler", "AvatarSprite", "EqualScalingAssembler", "EqualScalingSprite", "SpriteMaskedAvatarAssembler", "SpriteMaskedAvatarSprite", "CAParser", "SceneCellularAutomata", "MovingBGAssembler", "MovingBGSprite", "LayeredBatchingAssembler", "LayeredBatchingRootRenderer", "SceneLayeredBatchingScrollView", "SceneMetaBalls", "MetaBallsAssembler", "MetaBallsRenderer", "SceneParticlesBatching", "SDF", "SceneSDF", "SceneVisualizeMusic", "NavigatorButton", "SimpleDraggable", "SceneLoad", "SceneTest", "SceneWelcome", "GTAssembler2D", "GTAutoFitSpriteAssembler2D", "GTSimpleSpriteAssembler2D" ]);
+}, {}, [ "SceneTestGraphics", "SceneSpriteMaskedAvatars", "AvatarAssembler", "AvatarSprite", "EqualScalingAssembler", "EqualScalingSprite", "SpriteMaskedAvatarAssembler", "SpriteMaskedAvatarSprite", "CAParser", "SceneCellularAutomata", "MovingBGAssembler", "MovingBGSprite", "SceneDrawingBoard", "LayeredBatchingAssembler", "LayeredBatchingRootRenderer", "SceneLayeredBatchingScrollView", "SceneMetaBalls", "MetaBallsAssembler", "MetaBallsRenderer", "SceneParticlesBatching", "SDF", "SceneSDF", "FFTTextureGenerator2", "MusicVisualizer", "MusicVisualizerH5", "SceneVisualizeMusic", "NavigatorButton", "SimpleDraggable", "SceneLoad", "SceneTest", "SceneWelcome", "GTAssembler2D", "GTAutoFitSpriteAssembler2D", "GTSimpleSpriteAssembler2D" ]);
