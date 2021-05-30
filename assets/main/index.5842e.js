@@ -2214,6 +2214,7 @@ window.__require = function e(t, n, r) {
         _this._renderBuffMap = new Map();
         _this._isDragging = false;
         _this._points = [];
+        _this._debug = false;
         _this._colorIndex = 0;
         _this._colors = [ cc.Color.WHITE, cc.Color.RED, cc.Color.GREEN, cc.Color.BLUE, cc.Color.YELLOW, cc.Color.CYAN ];
         return _this;
@@ -2234,6 +2235,7 @@ window.__require = function e(t, n, r) {
         this.RenderToNode(this.pen, this.board);
       };
       SceneTest.prototype.SetBlendEqToMax = function(mat) {
+        if (this._debug) return;
         var gl = cc.game._renderContext;
         var gfx = cc.gfx;
         var ext = gl.getExtension("EXT_blend_minmax");
@@ -2246,13 +2248,24 @@ window.__require = function e(t, n, r) {
         var B = points[1];
         var C = points[2];
         var sprite = this.singlePass;
+        var isValid = true;
         var useBezier = true;
+        var halfBezier = true;
+        Math.abs((B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x)) <= 1e-5 && (useBezier = false);
+        !useBezier && A.equals(B) && (isValid = false);
         if (useBezier) {
           sprite.setMaterial(0, this.matBezier);
           var mat = sprite.getComponent(cc.Sprite).getMaterial(0);
           this.SetBlendEqToMax(mat);
-          B = B.mul(4);
-          B.subSelf(A).subSelf(C).divSelf(2);
+          if (halfBezier) {
+            var TB = A.sub(C);
+            TB.mulSelf(.25).addSelf(B);
+            C = B;
+            B = TB;
+          } else {
+            B = B.mul(4);
+            B.subSelf(A).subSelf(C).divSelf(2);
+          }
           mat.setProperty("PA", [ A.x, A.y ]);
           mat.setProperty("PB", [ B.x, B.y ]);
           mat.setProperty("PC", [ C.x, C.y ]);
@@ -2262,10 +2275,14 @@ window.__require = function e(t, n, r) {
           this.SetBlendEqToMax(mat);
           mat.setProperty("PP", [ A.x, A.y, B.x, B.y ]);
         }
-        sprite.enabled = true;
-        this._colorIndex = (this._colorIndex + 1) % this._colors.length;
-        this.RenderToNode(sprite.node, this.board);
-        sprite.enabled = false;
+        this._debug && console.log(A + ", " + B + ", " + C + ", color=" + this._colorIndex + ", useBezier=" + useBezier);
+        if (isValid) {
+          sprite.enabled = true;
+          this._debug && (sprite.node.color = this._colors[this._colorIndex]);
+          this._colorIndex = (this._colorIndex + 1) % this._colors.length;
+          this.RenderToNode(sprite.node, this.board);
+          sprite.enabled = false;
+        }
         this._points.shift();
         return;
       };
@@ -2291,6 +2308,7 @@ window.__require = function e(t, n, r) {
       SceneTest.prototype.OnBoardTouchEnd = function() {
         this._isDragging = false;
         this._points.length = 0;
+        this._debug && console.log("---------------------------- end ------------------------");
       };
       SceneTest.prototype.RenderToNode = function(root, target) {
         var renderBuff = this._renderBuffMap.get(target);
