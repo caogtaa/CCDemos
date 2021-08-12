@@ -1,0 +1,1021 @@
+[
+  {
+    "__type__": "cc.EffectAsset",
+    "_name": "QuadraticBezier",
+    "techniques": [
+      {
+        "passes": [
+          {
+            "blendState": {
+              "targets": [
+                {
+                  "blend": true
+                }
+              ]
+            },
+            "rasterizerState": {
+              "cullMode": 0
+            },
+            "properties": {
+              "texture": {
+                "value": "white",
+                "type": 29
+              },
+              "PA": {
+                "value": [
+                  0,
+                  0
+                ],
+                "type": 14
+              },
+              "PB": {
+                "value": [
+                  0,
+                  0
+                ],
+                "type": 14
+              },
+              "PC": {
+                "value": [
+                  0,
+                  0
+                ],
+                "type": 14
+              },
+              "width": {
+                "value": [
+                  0.01
+                ],
+                "type": 13
+              }
+            },
+            "program": "QuadraticBezier|vs|fs"
+          }
+        ]
+      }
+    ],
+    "shaders": [
+      {
+        "hash": 3280347138,
+        "glsl3": {
+          "vert": "\nprecision highp float;\nuniform CCGlobal {\n  mat4 cc_matView;\n  mat4 cc_matViewInv;\n  mat4 cc_matProj;\n  mat4 cc_matProjInv;\n  mat4 cc_matViewProj;\n  mat4 cc_matViewProjInv;\n  vec4 cc_cameraPos;\n  vec4 cc_time;\n  mediump vec4 cc_screenSize;\n  mediump vec4 cc_screenScale;\n};\nuniform CCLocal {\n  mat4 cc_matWorld;\n  mat4 cc_matWorldIT;\n};\nin vec3 a_position;\nin vec4 a_color;\nout vec4 v_color;\nin vec2 a_uv0;\nout vec2 v_uv0;\nvoid main() {\n    vec4 pos = vec4(a_position, 1);\n    pos = cc_matViewProj * pos;\n    v_uv0 = a_uv0;\n    v_uv0.y = 1.0 - v_uv0.y;\n    v_color = a_color;\n    gl_Position = pos;\n}",
+          "frag": "\nprecision highp float;\nuniform CCGlobal {\n  mat4 cc_matView;\n  mat4 cc_matViewInv;\n  mat4 cc_matProj;\n  mat4 cc_matProjInv;\n  mat4 cc_matViewProj;\n  mat4 cc_matViewProjInv;\n  vec4 cc_cameraPos;\n  vec4 cc_time;\n  mediump vec4 cc_screenSize;\n  mediump vec4 cc_screenScale;\n};\nuniform CCLocal {\n  mat4 cc_matWorld;\n  mat4 cc_matWorldIT;\n};\nin vec4 v_color;\nin vec2 v_uv0;\nuniform sampler2D texture;\nuniform UARGS {\n    vec2 PA;\n    vec2 PB;\n    vec2 PC;\n    float width;\n};\nfloat dot2( in vec2 v ) { return dot(v,v); }\nfloat sdBezier( in vec2 pos, in vec2 A, in vec2 B, in vec2 C )\n{\n    vec2 a = B - A;\n    vec2 b = A - 2.0*B + C;\n    vec2 c = a * 2.0;\n    vec2 d = A - pos;\n    float kk = 1.0/dot(b,b);\n    float kx = kk * dot(a,b);\n    float ky = kk * (2.0*dot(a,a)+dot(d,b)) / 3.0;\n    float kz = kk * dot(d,a);\n    float res = 0.0;\n    float p = ky - kx*kx;\n    float p3 = p*p*p;\n    float q = kx*(2.0*kx*kx-3.0*ky) + kz;\n    float h = q*q + 4.0*p3;\n    if( h >= 0.0)\n    {\n        h = sqrt(h);\n        vec2 x = (vec2(h,-h)-q)/2.0;\n        vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));\n        float t = clamp( uv.x+uv.y-kx, 0.0, 1.0 );\n        res = dot2(d + (c + b*t)*t);\n    }\n    else\n    {\n        float z = sqrt(-p);\n        float v = acos( q/(p*z*2.0) ) / 3.0;\n        float m = cos(v);\n        float n = sin(v)*1.732050808;\n        vec3  t = clamp(vec3(m+m,-n-m,n-m)*z-kx,0.0,1.0);\n        res = min( dot2(d+(c+b*t.x)*t.x),\n                dot2(d+(c+b*t.y)*t.y) );\n    }\n    return sqrt( res );\n}\nvoid main()\n{\n    vec2 uv = v_uv0.xy;\n    uv = uv * 2. - 1.;\n    uv.y *= 1280./720.;\n    float blur = 4. / 720.;\n    float mask = sdBezier(uv, PA, PB, PC);\n    mask = smoothstep(width, width-blur, mask);\n    vec4 col = v_color * mask;\n    gl_FragColor = col;\n}"
+        },
+        "glsl1": {
+          "vert": "\nprecision highp float;\nuniform mat4 cc_matViewProj;\nattribute vec3 a_position;\nattribute vec4 a_color;\nvarying vec4 v_color;\nattribute vec2 a_uv0;\nvarying vec2 v_uv0;\nvoid main() {\n    vec4 pos = vec4(a_position, 1);\n    pos = cc_matViewProj * pos;\n    v_uv0 = a_uv0;\n    v_uv0.y = 1.0 - v_uv0.y;\n    v_color = a_color;\n    gl_Position = pos;\n}",
+          "frag": "\nprecision highp float;\nvarying vec4 v_color;\nvarying vec2 v_uv0;\nuniform sampler2D texture;\nuniform vec2 PA;\nuniform vec2 PB;\nuniform vec2 PC;\nuniform float width;\nfloat dot2( in vec2 v ) { return dot(v,v); }\nfloat sdBezier( in vec2 pos, in vec2 A, in vec2 B, in vec2 C )\n{\n    vec2 a = B - A;\n    vec2 b = A - 2.0*B + C;\n    vec2 c = a * 2.0;\n    vec2 d = A - pos;\n    float kk = 1.0/dot(b,b);\n    float kx = kk * dot(a,b);\n    float ky = kk * (2.0*dot(a,a)+dot(d,b)) / 3.0;\n    float kz = kk * dot(d,a);\n    float res = 0.0;\n    float p = ky - kx*kx;\n    float p3 = p*p*p;\n    float q = kx*(2.0*kx*kx-3.0*ky) + kz;\n    float h = q*q + 4.0*p3;\n    if( h >= 0.0)\n    {\n        h = sqrt(h);\n        vec2 x = (vec2(h,-h)-q)/2.0;\n        vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));\n        float t = clamp( uv.x+uv.y-kx, 0.0, 1.0 );\n        res = dot2(d + (c + b*t)*t);\n    }\n    else\n    {\n        float z = sqrt(-p);\n        float v = acos( q/(p*z*2.0) ) / 3.0;\n        float m = cos(v);\n        float n = sin(v)*1.732050808;\n        vec3  t = clamp(vec3(m+m,-n-m,n-m)*z-kx,0.0,1.0);\n        res = min( dot2(d+(c+b*t.x)*t.x),\n                dot2(d+(c+b*t.y)*t.y) );\n    }\n    return sqrt( res );\n}\nvoid main()\n{\n    vec2 uv = v_uv0.xy;\n    uv = uv * 2. - 1.;\n    uv.y *= 1280./720.;\n    float blur = 4. / 720.;\n    float mask = sdBezier(uv, PA, PB, PC);\n    mask = smoothstep(width, width-blur, mask);\n    vec4 col = v_color * mask;\n    gl_FragColor = col;\n}"
+        },
+        "builtins": {
+          "globals": {
+            "blocks": [
+              {
+                "name": "CCGlobal",
+                "defines": []
+              }
+            ],
+            "samplers": []
+          },
+          "locals": {
+            "blocks": [
+              {
+                "name": "CCLocal",
+                "defines": []
+              }
+            ],
+            "samplers": []
+          }
+        },
+        "defines": [],
+        "blocks": [
+          {
+            "name": "UARGS",
+            "members": [
+              {
+                "name": "PA",
+                "type": 14,
+                "count": 1
+              },
+              {
+                "name": "PB",
+                "type": 14,
+                "count": 1
+              },
+              {
+                "name": "PC",
+                "type": 14,
+                "count": 1
+              },
+              {
+                "name": "width",
+                "type": 13,
+                "count": 1
+              }
+            ],
+            "defines": [],
+            "binding": 0
+          }
+        ],
+        "samplers": [
+          {
+            "name": "texture",
+            "type": 29,
+            "count": 1,
+            "defines": [],
+            "binding": 30
+          }
+        ],
+        "record": null,
+        "name": "QuadraticBezier|vs|fs"
+      }
+    ]
+  },
+  {
+    "__type__": "cc.Material",
+    "_name": "QuadraticBezier",
+    "_effectAsset": {
+      "__uuid__": "10nq3b3H9BspNoiPXn1yq3"
+    },
+    "_techniqueData": {
+      "0": {
+        "props": {}
+      }
+    }
+  },
+  {
+    "__type__": "cc.SpriteFrame",
+    "content": {
+      "name": "default_btn_disabled",
+      "texture": "71VhFCTINJM6/Ky3oX9nBT",
+      "rect": [
+        0,
+        0,
+        40,
+        40
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        40,
+        40
+      ],
+      "capInsets": [
+        12,
+        12,
+        12,
+        12
+      ]
+    }
+  },
+  {
+    "__type__": "cc.Material",
+    "_name": "TwoPointsCapsule",
+    "_effectAsset": {
+      "__uuid__": "71pZ73FIxHQZ+ir/FQygFd"
+    },
+    "_techniqueData": {
+      "0": {
+        "props": {}
+      }
+    }
+  },
+  {
+    "__type__": "cc.EffectAsset",
+    "_name": "TwoPointsCapsule",
+    "techniques": [
+      {
+        "passes": [
+          {
+            "blendState": {
+              "targets": [
+                {
+                  "blend": true
+                }
+              ]
+            },
+            "rasterizerState": {
+              "cullMode": 0
+            },
+            "properties": {
+              "texture": {
+                "value": "white",
+                "type": 29
+              },
+              "PP": {
+                "value": [
+                  0.5,
+                  0,
+                  0,
+                  0.5
+                ],
+                "type": 16
+              },
+              "width": {
+                "value": [
+                  0.01
+                ],
+                "type": 13
+              }
+            },
+            "program": "TwoPointsCapsule|vs|fs"
+          }
+        ]
+      }
+    ],
+    "shaders": [
+      {
+        "hash": 1066636379,
+        "glsl3": {
+          "vert": "\nprecision highp float;\nuniform CCGlobal {\n  mat4 cc_matView;\n  mat4 cc_matViewInv;\n  mat4 cc_matProj;\n  mat4 cc_matProjInv;\n  mat4 cc_matViewProj;\n  mat4 cc_matViewProjInv;\n  vec4 cc_cameraPos;\n  vec4 cc_time;\n  mediump vec4 cc_screenSize;\n  mediump vec4 cc_screenScale;\n};\nuniform CCLocal {\n  mat4 cc_matWorld;\n  mat4 cc_matWorldIT;\n};\nin vec3 a_position;\nin vec4 a_color;\nout vec4 v_color;\nin vec2 a_uv0;\nout vec2 v_uv0;\nvoid main() {\n    vec4 pos = vec4(a_position, 1);\n    pos = cc_matViewProj * pos;\n    v_uv0 = a_uv0;\n    v_uv0.y = 1.0 - v_uv0.y;\n    v_color = a_color;\n    gl_Position = pos;\n}",
+          "frag": "\nprecision highp float;\nuniform CCGlobal {\n  mat4 cc_matView;\n  mat4 cc_matViewInv;\n  mat4 cc_matProj;\n  mat4 cc_matProjInv;\n  mat4 cc_matViewProj;\n  mat4 cc_matViewProjInv;\n  vec4 cc_cameraPos;\n  vec4 cc_time;\n  mediump vec4 cc_screenSize;\n  mediump vec4 cc_screenScale;\n};\nuniform CCLocal {\n  mat4 cc_matWorld;\n  mat4 cc_matWorldIT;\n};\nin vec4 v_color;\nin vec2 v_uv0;\nuniform sampler2D texture;\nuniform UARGS {\n    vec4 PP;\n    float width;\n};\nfloat Capsule(vec2 p, float o, float width, float height, float blur) {\n    float d = distance(p, vec2(0., clamp(p.y, o - height * 0.5, o + height * 0.5)));\n    return d;\n}\nmat2 Rotate2d(float angle) {\n    return mat2(cos(angle), -sin(angle),\n                sin(angle), cos(angle));\n}\nmat2 Rotate2d2(float cosine, float sine) {\n    return mat2(cosine, -sine, sine, cosine);\n}\nvoid main()\n{\n    vec2 uv = v_uv0.xy;\n    uv = uv * 2. - 1.;\n    uv.y *= 1280./720.;\n    float height = 0.01;\n    float blur = 4. / 720.;\n    float dist = distance(PP.xy, PP.zw);\n    vec2 mid = (PP.xy + PP.zw) * 0.5;\n    uv -= mid;\n    vec2 cs = (PP.xy - PP.zw) / dist;\n    uv = Rotate2d2(-cs.y, cs.x) * uv;\n    height = dist;\n    float mask = Capsule(uv, 0., width, height, blur);\n    mask = smoothstep(width, width-blur, mask);\n    vec4 col = v_color * mask;\n    gl_FragColor = col;\n}"
+        },
+        "glsl1": {
+          "vert": "\nprecision highp float;\nuniform mat4 cc_matViewProj;\nattribute vec3 a_position;\nattribute vec4 a_color;\nvarying vec4 v_color;\nattribute vec2 a_uv0;\nvarying vec2 v_uv0;\nvoid main() {\n    vec4 pos = vec4(a_position, 1);\n    pos = cc_matViewProj * pos;\n    v_uv0 = a_uv0;\n    v_uv0.y = 1.0 - v_uv0.y;\n    v_color = a_color;\n    gl_Position = pos;\n}",
+          "frag": "\nprecision highp float;\nvarying vec4 v_color;\nvarying vec2 v_uv0;\nuniform sampler2D texture;\nuniform vec4 PP;\nuniform float width;\nfloat Capsule(vec2 p, float o, float width, float height, float blur) {\n    float d = distance(p, vec2(0., clamp(p.y, o - height * 0.5, o + height * 0.5)));\n    return d;\n}\nmat2 Rotate2d(float angle) {\n    return mat2(cos(angle), -sin(angle),\n                sin(angle), cos(angle));\n}\nmat2 Rotate2d2(float cosine, float sine) {\n    return mat2(cosine, -sine, sine, cosine);\n}\nvoid main()\n{\n    vec2 uv = v_uv0.xy;\n    uv = uv * 2. - 1.;\n    uv.y *= 1280./720.;\n    float height = 0.01;\n    float blur = 4. / 720.;\n    float dist = distance(PP.xy, PP.zw);\n    vec2 mid = (PP.xy + PP.zw) * 0.5;\n    uv -= mid;\n    vec2 cs = (PP.xy - PP.zw) / dist;\n    uv = Rotate2d2(-cs.y, cs.x) * uv;\n    height = dist;\n    float mask = Capsule(uv, 0., width, height, blur);\n    mask = smoothstep(width, width-blur, mask);\n    vec4 col = v_color * mask;\n    gl_FragColor = col;\n}"
+        },
+        "builtins": {
+          "globals": {
+            "blocks": [
+              {
+                "name": "CCGlobal",
+                "defines": []
+              }
+            ],
+            "samplers": []
+          },
+          "locals": {
+            "blocks": [
+              {
+                "name": "CCLocal",
+                "defines": []
+              }
+            ],
+            "samplers": []
+          }
+        },
+        "defines": [],
+        "blocks": [
+          {
+            "name": "UARGS",
+            "members": [
+              {
+                "name": "PP",
+                "type": 16,
+                "count": 1
+              },
+              {
+                "name": "width",
+                "type": 13,
+                "count": 1
+              }
+            ],
+            "defines": [],
+            "binding": 0
+          }
+        ],
+        "samplers": [
+          {
+            "name": "texture",
+            "type": 29,
+            "count": 1,
+            "defines": [],
+            "binding": 30
+          }
+        ],
+        "record": null,
+        "name": "TwoPointsCapsule|vs|fs"
+      }
+    ]
+  },
+  [
+    {
+      "__type__": "cc.SceneAsset",
+      "_name": "SceneDrawingBoard",
+      "scene": {
+        "__id__": 1
+      },
+      "asyncLoadAssets": null
+    },
+    {
+      "__type__": "cc.Scene",
+      "_name": "New Node",
+      "_children": [
+        {
+          "__id__": 2
+        }
+      ],
+      "_anchorPoint": {
+        "__type__": "cc.Vec2"
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "autoReleaseAssets": false
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "Canvas",
+      "_parent": {
+        "__id__": 1
+      },
+      "_children": [
+        {
+          "__id__": 3
+        },
+        {
+          "__id__": 4
+        },
+        {
+          "__id__": 5
+        },
+        {
+          "__id__": 7
+        },
+        {
+          "__id__": 8
+        },
+        {
+          "__id__": 9
+        },
+        {
+          "__id__": 12
+        }
+      ],
+      "_components": [
+        {
+          "__type__": "cc.Canvas",
+          "node": {
+            "__id__": 2
+          },
+          "_designResolution": {
+            "__type__": "cc.Size",
+            "width": 720,
+            "height": 1280
+          }
+        },
+        {
+          "__type__": "cc.Widget",
+          "node": {
+            "__id__": 2
+          },
+          "_alignFlags": 45
+        },
+        {
+          "__type__": "2310cj/T4ZHua1DcDcsflm5",
+          "node": {
+            "__id__": 2
+          },
+          "board": {
+            "__id__": 4
+          },
+          "pen": {
+            "__id__": 8
+          },
+          "singlePass": {
+            "__id__": 6
+          },
+          "matCapsule": {
+            "__uuid__": "3dHGTDmupM6o+tAf3o9BiL"
+          },
+          "matBezier": {
+            "__uuid__": "1eBBXjrjBFvp4ie3oLBakB"
+          },
+          "ctx": {
+            "__id__": 13
+          }
+        }
+      ],
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 720,
+        "height": 1280
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          360,
+          640,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "_id": "faSm/tsVlPp4SN6cnRR2sJ"
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "Main Camera",
+      "_parent": {
+        "__id__": 2
+      },
+      "_components": [
+        {
+          "__type__": "cc.Camera",
+          "node": {
+            "__id__": 3
+          },
+          "_clearFlags": 7,
+          "_depth": -1
+        }
+      ],
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          723.3928592393968,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "board",
+      "_parent": {
+        "__id__": 2
+      },
+      "_components": [
+        {
+          "__type__": "cc.Sprite",
+          "node": {
+            "__id__": 4
+          },
+          "_materials": [
+            {
+              "__uuid__": "ecpdLyjvZBwrvm+cedCcQy"
+            }
+          ],
+          "_sizeMode": 0,
+          "_isTrimmedMode": false
+        }
+      ],
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 720,
+        "height": 1280
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          -1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "singlePassPing",
+      "_parent": {
+        "__id__": 2
+      },
+      "_components": [
+        {
+          "__id__": 6
+        }
+      ],
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 720,
+        "height": 1280
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Sprite",
+      "node": {
+        "__id__": 5
+      },
+      "_enabled": false,
+      "_materials": [
+        {
+          "__uuid__": "3dHGTDmupM6o+tAf3o9BiL"
+        }
+      ],
+      "_spriteFrame": {
+        "__uuid__": "9e/Pa3uvpL2qMj5ycP3Nth"
+      },
+      "_sizeMode": 0,
+      "_isTrimmedMode": false
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "singlePassPong",
+      "_parent": {
+        "__id__": 2
+      },
+      "_active": false,
+      "_components": [
+        {
+          "__type__": "cc.Sprite",
+          "node": {
+            "__id__": 7
+          },
+          "_enabled": false,
+          "_materials": [
+            {
+              "__uuid__": "3dHGTDmupM6o+tAf3o9BiL"
+            }
+          ],
+          "_spriteFrame": {
+            "__uuid__": "9e/Pa3uvpL2qMj5ycP3Nth"
+          },
+          "_sizeMode": 0,
+          "_isTrimmedMode": false
+        }
+      ],
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 720,
+        "height": 1280
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "pen",
+      "_parent": {
+        "__id__": 2
+      },
+      "_active": false,
+      "_components": [
+        {
+          "__type__": "cc.Sprite",
+          "node": {
+            "__id__": 8
+          },
+          "_materials": [
+            {
+              "__uuid__": "ecpdLyjvZBwrvm+cedCcQy"
+            }
+          ],
+          "_spriteFrame": {
+            "__uuid__": "a2MjXRFdtLlYQ5ouAFv/+R"
+          },
+          "_sizeMode": 0
+        }
+      ],
+      "_color": {
+        "__type__": "cc.Color",
+        "r": 255
+      },
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 100,
+        "height": 100
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          105.439,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "btnRender",
+      "_parent": {
+        "__id__": 2
+      },
+      "_children": [
+        {
+          "__id__": 10
+        }
+      ],
+      "_active": false,
+      "_components": [
+        {
+          "__type__": "cc.Button",
+          "node": {
+            "__id__": 9
+          },
+          "clickEvents": [
+            {
+              "__type__": "cc.ClickEvent",
+              "target": {
+                "__id__": 2
+              },
+              "_componentId": "2310cj/T4ZHua1DcDcsflm5",
+              "handler": "OnRender"
+            }
+          ],
+          "_N$transition": 2,
+          "transition": 2,
+          "_N$normalColor": {
+            "__type__": "cc.Color",
+            "r": 230,
+            "g": 230,
+            "b": 230
+          },
+          "_N$pressedColor": {
+            "__type__": "cc.Color",
+            "r": 200,
+            "g": 200,
+            "b": 200
+          },
+          "pressedColor": {
+            "__type__": "cc.Color",
+            "r": 200,
+            "g": 200,
+            "b": 200
+          },
+          "_N$disabledColor": {
+            "__type__": "cc.Color",
+            "r": 120,
+            "g": 120,
+            "b": 120,
+            "a": 200
+          },
+          "_N$normalSprite": {
+            "__uuid__": "f0BIwQ8D5Ml7nTNQbh1YlS"
+          },
+          "_N$pressedSprite": {
+            "__uuid__": "e97GVMl6JHh5Ml5qEDdSGa"
+          },
+          "pressedSprite": {
+            "__uuid__": "e97GVMl6JHh5Ml5qEDdSGa"
+          },
+          "_N$hoverSprite": {
+            "__uuid__": "f0BIwQ8D5Ml7nTNQbh1YlS"
+          },
+          "hoverSprite": {
+            "__uuid__": "f0BIwQ8D5Ml7nTNQbh1YlS"
+          },
+          "_N$disabledSprite": {
+            "__uuid__": "29FYIk+N1GYaeWH/q1NxQO"
+          },
+          "_N$target": {
+            "__id__": 10
+          }
+        }
+      ],
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 100,
+        "height": 40
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          -404.748,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "Background",
+      "_objFlags": 512,
+      "_parent": {
+        "__id__": 9
+      },
+      "_children": [
+        {
+          "__id__": 11
+        }
+      ],
+      "_components": [
+        {
+          "__type__": "cc.Sprite",
+          "node": {
+            "__id__": 10
+          },
+          "_materials": [
+            {
+              "__uuid__": "ecpdLyjvZBwrvm+cedCcQy"
+            }
+          ],
+          "_spriteFrame": {
+            "__uuid__": "f0BIwQ8D5Ml7nTNQbh1YlS"
+          },
+          "_type": 1,
+          "_sizeMode": 0
+        },
+        {
+          "__type__": "cc.Widget",
+          "node": {
+            "__id__": 10
+          },
+          "alignMode": 0,
+          "_alignFlags": 45,
+          "_originalWidth": 100,
+          "_originalHeight": 40
+        }
+      ],
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 100,
+        "height": 40
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "Label",
+      "_objFlags": 512,
+      "_parent": {
+        "__id__": 10
+      },
+      "_components": [
+        {
+          "__type__": "cc.Label",
+          "node": {
+            "__id__": 11
+          },
+          "_materials": [
+            {
+              "__uuid__": "ecpdLyjvZBwrvm+cedCcQy"
+            }
+          ],
+          "_useOriginalSize": false,
+          "_string": "render",
+          "_N$string": "render",
+          "_fontSize": 20,
+          "_enableWrapText": false,
+          "_N$horizontalAlign": 1,
+          "_N$verticalAlign": 1,
+          "_N$overflow": 1,
+          "_N$cacheMode": 1
+        }
+      ],
+      "_color": {
+        "__type__": "cc.Color"
+      },
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 100,
+        "height": 40
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "graphics",
+      "_parent": {
+        "__id__": 2
+      },
+      "_active": false,
+      "_components": [
+        {
+          "__id__": 13
+        }
+      ],
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "__type__": "cc.Graphics",
+      "node": {
+        "__id__": 12
+      },
+      "_materials": [
+        {
+          "__uuid__": "7caRGNuYlM1bLPcZZkDXko"
+        }
+      ],
+      "_lineWidth": 20,
+      "_strokeColor": {
+        "__type__": "cc.Color",
+        "r": 255,
+        "g": 255,
+        "b": 255
+      }
+    }
+  ],
+  {
+    "__type__": "cc.SpriteFrame",
+    "content": {
+      "name": "publicSingleColor",
+      "texture": "a7KUZr7IVJFpbWxGE9N+X3",
+      "rect": [
+        0,
+        0,
+        2,
+        2
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        2,
+        2
+      ],
+      "capInsets": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "__type__": "cc.SpriteFrame",
+    "content": {
+      "name": "default_sprite_splash",
+      "texture": "02delMVqdBD70a/HSD99FK",
+      "rect": [
+        0,
+        0,
+        2,
+        2
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        2,
+        2
+      ],
+      "capInsets": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "__type__": "cc.SpriteFrame",
+    "content": {
+      "name": "default_btn_pressed",
+      "texture": "b4P/PCArtIdIH38t6mlw8Y",
+      "rect": [
+        0,
+        0,
+        40,
+        40
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        40,
+        40
+      ],
+      "capInsets": [
+        12,
+        12,
+        12,
+        12
+      ]
+    }
+  },
+  {
+    "__type__": "cc.SpriteFrame",
+    "content": {
+      "name": "default_btn_normal",
+      "texture": "e8Ueib+qJEhL6mXAHdnwbi",
+      "rect": [
+        0,
+        0,
+        40,
+        40
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalSize": [
+        40,
+        40
+      ],
+      "capInsets": [
+        12,
+        12,
+        12,
+        12
+      ]
+    }
+  }
+]
