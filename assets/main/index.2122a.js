@@ -2916,12 +2916,12 @@ window.__require = function e(t, n, r) {
           this._viewScale = 1;
           this.UpdateDisplayMatProperties();
         }
-        this.FlushEffect(0);
-        this.FlushGraph(0);
+        this.FlushEffect(this._effectIndex);
+        this.FlushGraph(this._graphIndex);
       };
       SceneGraphics.prototype.update = function() {};
       SceneGraphics.prototype.NextGraph = function() {
-        this._graphIndex = (this._graphIndex + 1) % 2;
+        this._graphIndex = (this._graphIndex + 1) % 3;
         this.FlushGraph(this._graphIndex);
       };
       SceneGraphics.prototype.FlushGraph = function(index) {
@@ -2934,11 +2934,33 @@ window.__require = function e(t, n, r) {
           ctx.moveTo(-212, -139);
           ctx.bezierCurveTo(-213, 111, 38, 236, 246, 75);
           ctx.stroke();
-        } else {
+        } else if (1 === index) {
           ctx.moveTo(-100, -100);
           ctx.lineTo(-100, 100);
           ctx.lineTo(100, 100);
           ctx.close();
+          ctx.stroke();
+        } else {
+          var letterPath = new Map([ [ "C", [ cc.v2(.5, .7), cc.v2(-.7, .8), cc.v2(-.8, -.9), cc.v2(.3, -.7) ] ], [ "O", [ cc.v2(.1, .7), cc.v2(-.7, .6), cc.v2(-.7, -.8), cc.v2(-.1, -.7), cc.v2(.6, -.6), cc.v2(.8, .8) ] ], [ "S", [ cc.v2(.4, .7), cc.v2(-.5, .7), cc.v2(-.6, .1), cc.v2(0, 0), cc.v2(.6, 0), cc.v2(.5, -.8), cc.v2(-.4, -.7) ] ] ]);
+          var word = "COCOS";
+          var scale = 100;
+          var offsetx = -300;
+          for (var k = 0; k < word.length; ++k) {
+            var letter = word[k];
+            var path = letterPath.get(letter);
+            for (var i = 0, n = path.length; i < n; ) {
+              var p = path[i];
+              if (0 === i) {
+                ctx.moveTo(offsetx + p.x * scale, p.y * scale);
+                ++i;
+              } else {
+                var p1 = path[i], p2 = path[(i + 1) % n], p3 = path[(i + 2) % n];
+                i += 3;
+                ctx.bezierCurveTo(offsetx + p1.x * scale, p1.y * scale, offsetx + p2.x * scale, p2.y * scale, offsetx + p3.x * scale, p3.y * scale);
+              }
+            }
+            offsetx += 150;
+          }
           ctx.stroke();
         }
         this.FlushMatProperties(ctx);
