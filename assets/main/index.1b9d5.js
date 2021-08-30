@@ -287,6 +287,345 @@ window.__require = function e(t, n, r) {
     exports.CAParser = CAParser;
     cc._RF.pop();
   }, {} ],
+  CacheArray: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "64c2aY2EgxLzrTcupNI0PMc", "CacheArray");
+    "use strict";
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    exports.CacheArray = void 0;
+    var CacheArray = function() {
+      function CacheArray() {
+        this._len = 0;
+        this._data = [];
+      }
+      Object.defineProperty(CacheArray.prototype, "length", {
+        get: function() {
+          return this._len;
+        },
+        enumerable: false,
+        configurable: true
+      });
+      CacheArray.prototype.Get = function(index) {
+        return this._data[index];
+      };
+      CacheArray.prototype.Increase = function(type) {
+        var data = this._data;
+        if (data.length > this._len) {
+          var result_1 = data[this._len];
+          ++this._len;
+          result_1.Reset();
+          return result_1;
+        }
+        data.length += 1;
+        var result = data[this._len++] = new type();
+        return result;
+      };
+      CacheArray.prototype.Resize = function(n, type) {
+        if (this._len === n) return;
+        var data = this._data;
+        data.length < n && (data.length = n);
+        for (var i = this._len; i < n; ++i) void 0 === data[i] ? data[i] = new type() : data[i].Reset();
+        this._len = n;
+      };
+      CacheArray.prototype.Reset = function() {
+        this._len = 0;
+      };
+      return CacheArray;
+    }();
+    exports.CacheArray = CacheArray;
+    cc._RF.pop();
+  }, {} ],
+  CatmullRomSpline: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "209d7Pe6VhND5+tN+meM8b0", "CatmullRomSpline");
+    "use strict";
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    exports.CatmullRomSpline = exports.Marker = exports.Knot = exports.SplineParameterization = exports.SubKnot = void 0;
+    var NbSubSegmentPerSegment = 10;
+    var Epsilon = .1;
+    var MinimumKnotNb = 4;
+    var FirstSegmentKnotIndex = 2;
+    var SubKnot = function() {
+      function SubKnot() {}
+      return SubKnot;
+    }();
+    exports.SubKnot = SubKnot;
+    var SplineParameterization;
+    (function(SplineParameterization) {
+      SplineParameterization[SplineParameterization["Uniform"] = 0] = "Uniform";
+      SplineParameterization[SplineParameterization["Centripetal"] = 1] = "Centripetal";
+    })(SplineParameterization = exports.SplineParameterization || (exports.SplineParameterization = {}));
+    var Knot = function() {
+      function Knot(position, emitTime) {
+        void 0 === emitTime && (emitTime = cc.director.getTotalTime());
+        this.distanceFromStart = -1;
+        this.subKnots = null;
+        this.position = cc.Vec2.ZERO;
+        this.emitTime = 0;
+        this.subKnots = new Array(NbSubSegmentPerSegment + 1);
+        this.position.set(position);
+        this.emitTime = emitTime;
+      }
+      Knot.prototype.Invalidate = function() {
+        this.distanceFromStart = -1;
+      };
+      return Knot;
+    }();
+    exports.Knot = Knot;
+    var Marker = function() {
+      function Marker() {}
+      return Marker;
+    }();
+    exports.Marker = Marker;
+    var CatmullRomSpline = function() {
+      function CatmullRomSpline() {
+        this.splineParam = SplineParameterization.Centripetal;
+        this.knots = [];
+        this._prePoint = new cc.Vec2();
+        this._curPoint = new cc.Vec2();
+      }
+      Object.defineProperty(CatmullRomSpline.prototype, "NbSegments", {
+        get: function() {
+          return Math.max(0, this.knots.length - 3);
+        },
+        enumerable: false,
+        configurable: true
+      });
+      CatmullRomSpline.prototype.FindPositionFromDistance = function(distance, out) {
+        var tangent = out || cc.Vec2.ZERO;
+        var result = new Marker();
+        var foundSegment = this.PlaceMarker(result, distance);
+        foundSegment && (tangent = this.GetPosition(result, tangent));
+        return tangent;
+      };
+      CatmullRomSpline.prototype.FindTangentFromDistance = function(distance, out) {
+        var tangent = out || cc.Vec2.ZERO;
+        var result = new Marker();
+        var foundSegment = this.PlaceMarker(result, distance);
+        foundSegment && (tangent = this.GetTangent(result, tangent));
+        return tangent;
+      };
+      CatmullRomSpline.ComputeBinormal = function(tangent, dummy, out) {
+        out = out || new cc.Vec2();
+        out.x = tangent.y;
+        out.y = -tangent.x;
+        return out;
+      };
+      CatmullRomSpline.prototype.Length = function() {
+        if (0 === this.NbSegments) return 0;
+        return Math.max(0, this.GetSegmentDistanceFromStart(this.NbSegments - 1));
+      };
+      CatmullRomSpline.prototype.Clear = function() {
+        this.knots.length = 0;
+      };
+      CatmullRomSpline.prototype.MoveMarker = function(marker, distance) {
+        this.PlaceMarker(marker, distance, marker);
+      };
+      CatmullRomSpline.prototype.GetPosition = function(marker, out) {
+        var pos = out || cc.Vec2.ZERO;
+        if (0 === this.NbSegments) return pos;
+        var subKnots = this.GetSegmentSubKnots(marker.segmentIndex);
+        pos.x = cc.misc.lerp(subKnots[marker.subKnotAIndex].position.x, subKnots[marker.subKnotBIndex].position.x, marker.lerpRatio);
+        pos.y = cc.misc.lerp(subKnots[marker.subKnotAIndex].position.y, subKnots[marker.subKnotBIndex].position.y, marker.lerpRatio);
+        return pos;
+      };
+      CatmullRomSpline.prototype.GetTangent = function(marker, out) {
+        var tangent = out || cc.Vec2.ZERO;
+        if (0 === this.NbSegments) return tangent;
+        var subKnots = this.GetSegmentSubKnots(marker.segmentIndex);
+        tangent.x = cc.misc.lerp(subKnots[marker.subKnotAIndex].tangent.x, subKnots[marker.subKnotBIndex].tangent.x, marker.lerpRatio);
+        tangent.y = cc.misc.lerp(subKnots[marker.subKnotAIndex].tangent.y, subKnots[marker.subKnotBIndex].tangent.y, marker.lerpRatio);
+        return tangent;
+      };
+      CatmullRomSpline.prototype.GetSegmentSubKnots = function(i) {
+        return this.knots[FirstSegmentKnotIndex + i].subKnots;
+      };
+      CatmullRomSpline.prototype.GetSegmentDistanceFromStart = function(i) {
+        return this.knots[FirstSegmentKnotIndex + i].distanceFromStart;
+      };
+      CatmullRomSpline.prototype.Parametrize = function(fromSegmentIndex, toSegmentIndex) {
+        if (this.knots.length < MinimumKnotNb) return;
+        var nbSegments = Math.min(toSegmentIndex + 1, this.NbSegments);
+        fromSegmentIndex = Math.max(0, fromSegmentIndex);
+        var totalDistance = 0;
+        fromSegmentIndex > 0 && (totalDistance = this.GetSegmentDistanceFromStart(fromSegmentIndex - 1));
+        var knots = this.knots;
+        for (var i = fromSegmentIndex; i < nbSegments; ++i) {
+          var subKnots = this.GetSegmentSubKnots(i);
+          for (var j = 0; j < subKnots.length; j++) {
+            var sk = new SubKnot();
+            sk.distanceFromStart = totalDistance += this.ComputeLengthOfSegment(i, (j - 1) * Epsilon, j * Epsilon);
+            sk.position = this.GetPositionOnSegment(i, j * Epsilon);
+            sk.tangent = this.GetTangentOnSegment(i, j * Epsilon);
+            subKnots[j] = sk;
+          }
+          knots[FirstSegmentKnotIndex + i].distanceFromStart = totalDistance;
+        }
+      };
+      CatmullRomSpline.prototype.PlaceMarker = function(result, distance, from) {
+        void 0 === from && (from = null);
+        var nbSegments = this.NbSegments;
+        if (0 === nbSegments) return false;
+        if (distance <= 0) {
+          result.segmentIndex = 0;
+          result.subKnotAIndex = 0;
+          result.subKnotBIndex = 1;
+          result.lerpRatio = 0;
+          return true;
+        }
+        if (distance >= this.Length()) {
+          var subKnots = this.GetSegmentSubKnots(nbSegments - 1);
+          result.segmentIndex = nbSegments - 1;
+          result.subKnotAIndex = subKnots.length - 2;
+          result.subKnotBIndex = subKnots.length - 1;
+          result.lerpRatio = 1;
+          return true;
+        }
+        var fromSegmentIndex = 0;
+        var fromSubKnotIndex = 1;
+        null != from && (fromSegmentIndex = from.segmentIndex);
+        for (var i = fromSegmentIndex; i < nbSegments; ++i) {
+          if (distance > this.GetSegmentDistanceFromStart(i)) continue;
+          var subKnots = this.GetSegmentSubKnots(i);
+          for (var j = fromSubKnotIndex; j < subKnots.length; j++) {
+            var sk = subKnots[j];
+            if (distance > sk.distanceFromStart) continue;
+            result.segmentIndex = i;
+            result.subKnotAIndex = j - 1;
+            result.subKnotBIndex = j;
+            result.lerpRatio = 1 - (sk.distanceFromStart - distance) / (sk.distanceFromStart - subKnots[j - 1].distanceFromStart);
+            break;
+          }
+          break;
+        }
+        return true;
+      };
+      CatmullRomSpline.prototype.ComputeLength = function() {
+        if (this.knots.length < 4) return 0;
+        var length = 0;
+        var nbSegments = this.NbSegments;
+        for (var i = 0; i < nbSegments; ++i) length += this.ComputeLengthOfSegment(i, 0, 1);
+        return length;
+      };
+      CatmullRomSpline.prototype.ComputeLengthOfSegment = function(segmentIndex, from, to) {
+        var length = 0;
+        from = cc.misc.clamp01(from);
+        to = cc.misc.clamp01(to);
+        var lastPoint = this.GetPositionOnSegment(segmentIndex, from, this._prePoint);
+        var point = this._curPoint;
+        for (var j = from + Epsilon, n = to + Epsilon / 2; j < n; j += Epsilon) {
+          this.GetPositionOnSegment(segmentIndex, j, this._curPoint);
+          length += cc.Vec2.distance(point, lastPoint);
+          lastPoint.set(point);
+        }
+        return length;
+      };
+      CatmullRomSpline.prototype.GetPositionOnSegment = function(segmentIndex, t, out) {
+        var knots = this.knots;
+        return CatmullRomSpline.FindSplinePoint(knots[segmentIndex].position, knots[segmentIndex + 1].position, knots[segmentIndex + 2].position, knots[segmentIndex + 3].position, t, this.splineParam, out || new cc.Vec2());
+      };
+      CatmullRomSpline.prototype.GetTangentOnSegment = function(segmentIndex, t, out) {
+        var knots = this.knots;
+        var result = CatmullRomSpline.FindSplineTangent(knots[segmentIndex].position, knots[segmentIndex + 1].position, knots[segmentIndex + 2].position, knots[segmentIndex + 3].position, t, this.splineParam, out || new cc.Vec2());
+        result.normalizeSelf();
+        return result;
+      };
+      CatmullRomSpline.GetT = function(t, alpha, p0, p1) {
+        var tmpVec2 = CatmullRomSpline._tmpVec2;
+        var d = p1.sub(p0, tmpVec2);
+        var a = d.dot(d);
+        var b = Math.pow(a, .5 * alpha);
+        return b + t;
+      };
+      CatmullRomSpline.FindSplinePoint = function(p0, p1, p2, p3, t, splineParam, out) {
+        var ret = out || new cc.Vec2();
+        if (splineParam === SplineParameterization.Uniform) {
+          var t2 = t * t;
+          var t3 = t2 * t;
+          ret.x = .5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+          ret.y = .5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+          return ret;
+        }
+        var alpha = .5;
+        var t0 = 0;
+        var t1 = CatmullRomSpline.GetT(t0, alpha, p0, p1);
+        var t2 = CatmullRomSpline.GetT(t1, alpha, p1, p2);
+        var t3 = CatmullRomSpline.GetT(t2, alpha, p2, p3);
+        t = cc.misc.lerp(t1, t2, t);
+        var t1_0 = 1 / (t1 - t0);
+        var t2_1 = 1 / (t2 - t1);
+        var t3_2 = 1 / (t3 - t2);
+        var t2_0 = 1 / (t2 - t0);
+        var t3_1 = 1 / (t3 - t1);
+        var A1 = (t1 - t) * t1_0 * p0.x + (t - t0) * t1_0 * p1.x;
+        var A2 = (t2 - t) * t2_1 * p1.x + (t - t1) * t2_1 * p2.x;
+        var A3 = (t3 - t) * t3_2 * p2.x + (t - t2) * t3_2 * p3.x;
+        var B1 = (t2 - t) * t2_0 * A1 + (t - t0) * t2_0 * A2;
+        var B2 = (t3 - t) * t3_1 * A2 + (t - t1) * t3_1 * A3;
+        var C = (t2 - t) * t2_1 * B1 + (t - t1) * t2_1 * B2;
+        ret.x = C;
+        A1 = (t1 - t) * t1_0 * p0.y + (t - t0) * t1_0 * p1.y;
+        A2 = (t2 - t) * t2_1 * p1.y + (t - t1) * t2_1 * p2.y;
+        A3 = (t3 - t) * t3_2 * p2.y + (t - t2) * t3_2 * p3.y;
+        B1 = (t2 - t) * t2_0 * A1 + (t - t0) * t2_0 * A2;
+        B2 = (t3 - t) * t3_1 * A2 + (t - t1) * t3_1 * A3;
+        C = (t2 - t) * t2_1 * B1 + (t - t1) * t2_1 * B2;
+        ret.y = C;
+        return ret;
+      };
+      CatmullRomSpline.GetDT = function(p0, p1, alpha) {
+        var tmpVec2 = CatmullRomSpline._tmpVec2;
+        var d = p1.sub(p0, tmpVec2);
+        var a = d.dot(d);
+        var b = Math.pow(a, .5 * alpha);
+        return b;
+      };
+      CatmullRomSpline.FindSplineTangent = function(p0, p1, p2, p3, t, splineParam, out) {
+        var ret = out || new cc.Vec2();
+        if (splineParam === SplineParameterization.Uniform) {
+          var t2 = t * t;
+          ret.x = .5 * (-p0.x + p2.x) + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t2 * 1.5;
+          ret.y = .5 * (-p0.y + p2.y) + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t2 * 1.5;
+          return ret;
+        }
+        var alpha = .5;
+        var t0 = 0;
+        var t1 = CatmullRomSpline.GetT(t0, alpha, p0, p1);
+        var t2 = CatmullRomSpline.GetT(t1, alpha, p1, p2);
+        var t3 = CatmullRomSpline.GetT(t2, alpha, p2, p3);
+        t = cc.misc.lerp(t1, t2, t);
+        var t1_0 = 1 / (t1 - t0);
+        var t2_0 = 1 / (t2 - t0);
+        var t2_1 = 1 / (t2 - t1);
+        var t3_1 = 1 / (t3 - t1);
+        var t3_2 = 1 / (t3 - t2);
+        var tan1x = (p1.x - p0.x) * t1_0 - (p2.x - p0.x) * t2_0 + (p2.x - p1.x) * t2_1;
+        var tan1y = (p1.y - p0.y) * t1_0 - (p2.y - p0.y) * t2_0 + (p2.y - p1.y) * t2_1;
+        var tan2x = (p2.x - p1.x) * t2_1 - (p3.x - p1.x) * t3_1 + (p3.x - p2.x) * t3_2;
+        var tan2y = (p2.y - p1.y) * t2_1 - (p3.y - p1.y) * t3_1 + (p3.y - p2.y) * t3_2;
+        var inv3 = (t2 - t1) / 3;
+        var R1x = p1.x + inv3 * tan1x;
+        var R1y = p1.y + inv3 * tan1y;
+        var R2x = p2.x - inv3 * tan2x;
+        var R2y = p2.y - inv3 * tan2y;
+        var u = (t - t1) * t2_1;
+        var n = 1 - u;
+        var dCdtx = 3 * (n * n * (R1x - p1.x) + 2 * u * n * (R2x - R1x) + u * u * (p2.x - R2x)) * t2_1;
+        var dCdty = 3 * (n * n * (R1y - p1.y) + 2 * u * n * (R2y - R1y) + u * u * (p2.y - R2y)) * t2_1;
+        ret.x = dCdtx;
+        ret.y = dCdty;
+        return ret;
+      };
+      CatmullRomSpline._tmpVec2 = cc.v2(0, 0);
+      return CatmullRomSpline;
+    }();
+    exports.CatmullRomSpline = CatmullRomSpline;
+    cc._RF.pop();
+  }, {} ],
   EDTAA3: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "131190LCMNFYoFg4bWAbhgT", "EDTAA3");
@@ -1464,6 +1803,7 @@ window.__require = function e(t, n, r) {
     Object.defineProperty(exports, "__esModule", {
       value: true
     });
+    var SmoothTrail_1 = require("./Script/SmoothTrail");
     var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
     var GraphicsShowMesh = function(_super) {
       __extends(GraphicsShowMesh, _super);
@@ -1471,6 +1811,8 @@ window.__require = function e(t, n, r) {
         return null !== _super && _super.apply(this, arguments) || this;
       }
       GraphicsShowMesh.prototype.onLoad = function() {
+        _super.prototype.onLoad.call(this);
+        var mat = this.getMaterial(0);
         this.InjectAssembler();
       };
       GraphicsShowMesh.prototype.start = function() {};
@@ -1513,10 +1855,12 @@ window.__require = function e(t, n, r) {
       };
       GraphicsShowMesh = __decorate([ ccclass ], GraphicsShowMesh);
       return GraphicsShowMesh;
-    }(cc.Graphics);
+    }(SmoothTrail_1.SmoothTrail);
     exports.default = GraphicsShowMesh;
     cc._RF.pop();
-  }, {} ],
+  }, {
+    "./Script/SmoothTrail": "SmoothTrail"
+  } ],
   LayeredBatchingAssembler: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "9b7db/QlVpNR6BkHD3PCH0u", "LayeredBatchingAssembler");
@@ -2695,7 +3039,7 @@ window.__require = function e(t, n, r) {
         _this._isDragging = false;
         _this._points = [];
         _this._debug = false;
-        _this._lineWidth = .05;
+        _this._lineWidth = .01;
         _this._colorIndex = 0;
         _this._colors = [ cc.Color.WHITE, cc.Color.RED, cc.Color.GREEN, cc.Color.BLUE, cc.Color.YELLOW, cc.Color.CYAN ];
         return _this;
@@ -2846,6 +3190,207 @@ window.__require = function e(t, n, r) {
     exports.default = SceneDrawingBoard;
     cc._RF.pop();
   }, {} ],
+  SceneGraphicsDrawingBoard: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "02bc6qv36xMhZr5zfx/XD17", "SceneGraphicsDrawingBoard");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    var SmoothTrail_1 = require("../Graphics/Script/SmoothTrail");
+    var SplineTrailRenderer_1 = require("./Script/SplineTrailRenderer");
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var SceneGraphicsDrawingBoard = function(_super) {
+      __extends(SceneGraphicsDrawingBoard, _super);
+      function SceneGraphicsDrawingBoard() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this.board = null;
+        _this.ctx = null;
+        _this.trailRenderer = null;
+        _this.edtK = null;
+        _this.materials = [];
+        _this._autoRender = true;
+        _this._isDragging = false;
+        _this._points = [];
+        _this._debug = false;
+        _this._lineWidth = .05;
+        _this._bezierParams = [];
+        _this._debugK = 0;
+        _this._tmpV2 = cc.v2(0, 0);
+        _this._colorIndex = 0;
+        _this._colors = [ cc.Color.WHITE, cc.Color.RED, cc.Color.GREEN, cc.Color.BLUE, cc.Color.YELLOW, cc.Color.CYAN ];
+        _this._materialIndex = 0;
+        return _this;
+      }
+      SceneGraphicsDrawingBoard.prototype.onLoad = function() {
+        var sprite = this.board.getComponent(cc.Sprite);
+        sprite.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+        this.board.on(cc.Node.EventType.TOUCH_START, this.OnBoardTouchStart, this);
+        this.board.on(cc.Node.EventType.TOUCH_MOVE, this.OnBoardTouchMove, this);
+        this.board.on(cc.Node.EventType.TOUCH_END, this.OnBoardTouchEnd, this);
+        this.board.on(cc.Node.EventType.TOUCH_CANCEL, this.OnBoardTouchEnd, this);
+      };
+      SceneGraphicsDrawingBoard.prototype.start = function() {
+        var ctx = this.ctx;
+        if (ctx.node.active) {
+          ctx.StartPath(cc.v2(0, 0));
+          ctx.AddPathPoint(cc.v2(0, 100));
+          ctx.AddPathPoint(cc.v2(1, 0));
+          ctx.AddPathPoint(cc.v2(100, 0));
+          ctx.EndPath();
+        }
+        var trailRenderer = this.trailRenderer;
+        if (trailRenderer.node.active) {
+          trailRenderer.StartPath(trailRenderer.FromLocalPos(cc.v2(0, 0)));
+          trailRenderer.AddPoint(trailRenderer.FromLocalPos(cc.v2(0, 100)));
+          trailRenderer.AddPoint(trailRenderer.FromLocalPos(cc.v2(100, 0)));
+        }
+      };
+      SceneGraphicsDrawingBoard.prototype.update = function() {
+        return;
+        var points;
+        var A;
+        var B;
+        var C;
+        var isValid;
+        var useBezier;
+        var halfBezier;
+        var CP1;
+        var CP2;
+        var D;
+      };
+      SceneGraphicsDrawingBoard.prototype.CalculateControlPoints = function(P0, B1, B2, P3, CP1, CP2) {
+        var t = 1 / 3;
+        var C0 = P0.mul(Math.pow(1 - t, 3));
+        var C1 = 3 * Math.pow(1 - t, 2) * t;
+        var C2 = 3 * (1 - t) * t * t;
+        var C3 = P3.mul(t * t * t);
+        t = 2 / 3;
+        var D0 = P0.mul(Math.pow(1 - t, 3));
+        var D1 = 3 * Math.pow(1 - t, 2) * t;
+        var D2 = 3 * (1 - t) * t * t;
+        var D3 = P3.mul(t * t * t);
+        var Z1 = B1.sub(C0).sub(C3);
+        var Z2 = B2.sub(D0).sub(D3);
+        CP2.set(Z2.mul(C1).sub(Z1.mul(D1)).div(C1 * D2 - C2 * D1));
+        CP1.set(Z2.mul(C1).sub(CP2.mul(C1 * D2)).div(C1 * D1));
+      };
+      SceneGraphicsDrawingBoard.prototype.Clear = function() {
+        this.ctx.node.active && this.ctx.clear();
+        this._bezierParams.length = 0;
+      };
+      SceneGraphicsDrawingBoard.prototype.KthBezierEditEnd = function(e) {
+        var k = parseInt(e.string);
+        this.SetK(k);
+      };
+      SceneGraphicsDrawingBoard.prototype.SetK = function(k, updateCtrl) {
+        void 0 === updateCtrl && (updateCtrl = false);
+        if (k < 0 || k >= this._bezierParams.length) {
+          console.error("k out of range");
+          return;
+        }
+        updateCtrl && (this.edtK.string = "" + k);
+        this._debugK = k;
+        var param = this._bezierParams[k];
+        var ctx = this.ctx;
+        ctx.clear();
+        ctx.moveTo(param.A.x, param.A.y);
+        ctx.bezierCurveTo(param.CP1.x, param.CP1.y, param.CP2.x, param.CP2.y, param.D.x, param.D.y);
+        ctx.stroke();
+      };
+      SceneGraphicsDrawingBoard.prototype.ShowKthBezierPoints = function() {
+        var k = this._debugK;
+        if (k < 0 || k >= this._bezierParams.length) {
+          console.error("k out of range");
+          return;
+        }
+        var param = this._bezierParams[k];
+        var A = param.A, B = param.B, C = param.C, D = param.D, CP1 = param.CP1, CP2 = param.CP2;
+        console.log("\n            A: (" + A.x + ", " + A.y + "),\n            B: (" + B.x + ", " + B.y + "),\n            C: (" + C.x + ", " + C.y + "),\n            D: (" + D.x + ", " + D.y + "),\n            CP1: (" + CP1.x + ", " + CP1.y + "),\n            CP2: (" + CP2.x + ", " + CP2.y);
+      };
+      SceneGraphicsDrawingBoard.prototype.PrevK = function() {
+        this.SetK(this._debugK - 1);
+      };
+      SceneGraphicsDrawingBoard.prototype.NextK = function() {
+        this.SetK(this._debugK + 1);
+      };
+      SceneGraphicsDrawingBoard.prototype.TouchPosToGraphicsPos = function(pos) {
+        return this.ctx.node.convertToNodeSpaceAR(pos);
+      };
+      SceneGraphicsDrawingBoard.prototype.OnBoardTouchStart = function(e) {
+        var pos = this.TouchPosToGraphicsPos(e.getLocation());
+        this._isDragging = true;
+        this._points.length = 0;
+        this._points.push(pos);
+        this.ctx.node.active && this.ctx.StartPath(pos);
+        var trailRenderer = this.trailRenderer;
+        if (trailRenderer.node.active) {
+          trailRenderer.StartPath(trailRenderer.FromLocalPos(pos));
+          trailRenderer.AddPoint(trailRenderer.FromLocalPos(pos));
+        }
+      };
+      SceneGraphicsDrawingBoard.prototype.OnBoardTouchMove = function(e) {
+        if (!this._isDragging) return;
+        var cur = this.TouchPosToGraphicsPos(e.getLocation());
+        this._points.push(cur);
+        this.ctx.node.active && this.ctx.AddPathPoint(cur);
+        var trailRenderer = this.trailRenderer;
+        trailRenderer.node.active && trailRenderer.AddPoint(trailRenderer.FromLocalPos(cur));
+      };
+      SceneGraphicsDrawingBoard.prototype.OnBoardTouchEnd = function() {
+        this._isDragging = false;
+        this._points.length = 0;
+        this.ctx.node.active && this.ctx.EndPath();
+        this.trailRenderer.node.active && console.log("----- vcount: " + this.trailRenderer._vertices.length);
+        this._debug && console.log("---------------------------- end ------------------------");
+      };
+      SceneGraphicsDrawingBoard.prototype.OnSwitchParam = function() {
+        this.trailRenderer.cornerType === SplineTrailRenderer_1.CornerType.Continuous ? this.trailRenderer.cornerType = SplineTrailRenderer_1.CornerType.Fragmented : this.trailRenderer.cornerType = SplineTrailRenderer_1.CornerType.Continuous;
+        this.trailRenderer.RenderMesh();
+      };
+      SceneGraphicsDrawingBoard.prototype.OnSwitchMaterial = function() {
+        this._materialIndex = (this._materialIndex + 1) % this.materials.length;
+        this.trailRenderer.setMaterial(0, this.materials[this._materialIndex]);
+        this.trailRenderer.RenderMesh();
+      };
+      __decorate([ property(cc.Node) ], SceneGraphicsDrawingBoard.prototype, "board", void 0);
+      __decorate([ property(SmoothTrail_1.SmoothTrail) ], SceneGraphicsDrawingBoard.prototype, "ctx", void 0);
+      __decorate([ property(SplineTrailRenderer_1.SplineTrailRenderer) ], SceneGraphicsDrawingBoard.prototype, "trailRenderer", void 0);
+      __decorate([ property(cc.EditBox) ], SceneGraphicsDrawingBoard.prototype, "edtK", void 0);
+      __decorate([ property([ cc.Material ]) ], SceneGraphicsDrawingBoard.prototype, "materials", void 0);
+      SceneGraphicsDrawingBoard = __decorate([ ccclass ], SceneGraphicsDrawingBoard);
+      return SceneGraphicsDrawingBoard;
+    }(cc.Component);
+    exports.default = SceneGraphicsDrawingBoard;
+    cc._RF.pop();
+  }, {
+    "../Graphics/Script/SmoothTrail": "SmoothTrail",
+    "./Script/SplineTrailRenderer": "SplineTrailRenderer"
+  } ],
   SceneGraphics: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "0ad808M8ylGbooXMchyavso", "SceneGraphics");
@@ -2879,6 +3424,7 @@ window.__require = function e(t, n, r) {
     });
     var SimpleDraggable_1 = require("../../Scripts/Misc/SimpleDraggable");
     var GraphicsShowMesh_1 = require("./GraphicsShowMesh");
+    var SmoothTrail_1 = require("./Script/SmoothTrail");
     var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
     var SceneGraphics = function(_super) {
       __extends(SceneGraphics, _super);
@@ -2898,6 +3444,7 @@ window.__require = function e(t, n, r) {
         return _this;
       }
       SceneGraphics.prototype.onLoad = function() {
+        this.displayArea = this.ctx.node;
         var dragArea = this.dragArea;
         dragArea.on(cc.Node.EventType.TOUCH_START, this.OnDisplayTouchStart, this);
         dragArea.on(cc.Node.EventType.TOUCH_MOVE, this.OnDisplayTouchMove, this);
@@ -2972,7 +3519,7 @@ window.__require = function e(t, n, r) {
       SceneGraphics.prototype.FlushEffect = function(index) {
         var mat = this.materials[index];
         var cls = this._specialGraphicsCls.get(mat.name);
-        void 0 == cls && (cls = cc.Graphics);
+        void 0 == cls && (cls = SmoothTrail_1.SmoothTrail);
         if (cls !== this._curGraphicsCls) {
           var ctxNode = this.ctx.node;
           ctxNode.removeComponent(this._curGraphicsCls);
@@ -3038,7 +3585,8 @@ window.__require = function e(t, n, r) {
     cc._RF.pop();
   }, {
     "../../Scripts/Misc/SimpleDraggable": "SimpleDraggable",
-    "./GraphicsShowMesh": "GraphicsShowMesh"
+    "./GraphicsShowMesh": "GraphicsShowMesh",
+    "./Script/SmoothTrail": "SmoothTrail"
   } ],
   SceneLayeredBatchingScrollView: [ function(require, module, exports) {
     "use strict";
@@ -3467,6 +4015,7 @@ window.__require = function e(t, n, r) {
         _this.dragArea = null;
         _this.targetLabel = null;
         _this.displayArea = null;
+        _this.edtWidth = null;
         _this._viewCenter = cc.v2(0, 0);
         _this._viewScale = 1;
         return _this;
@@ -3478,6 +4027,7 @@ window.__require = function e(t, n, r) {
         dragArea.on(cc.Node.EventType.TOUCH_END, this.OnDisplayTouchEnd, this);
         dragArea.on(cc.Node.EventType.TOUCH_CANCEL, this.OnDisplayTouchEnd, this);
         dragArea.on(cc.Node.EventType.MOUSE_WHEEL, this.OnDisplayMouseWheel, this);
+        this.edtWidth.string = this.displayArea.width.toString();
       };
       SceneSDFFont.prototype.start = function() {
         if (this.displayArea) {
@@ -3527,6 +4077,27 @@ window.__require = function e(t, n, r) {
         this._viewCenter.mulSelf(scale);
         this.UpdateDisplayMatProperties();
       };
+      SceneSDFFont.prototype.OnEditWidtEnded = function(e) {
+        var w = parseInt(e.string);
+        this.UpdateWidthProperty(w);
+      };
+      SceneSDFFont.prototype.UpdateWidthProperty = function(w) {
+        var displayArea = this.displayArea;
+        var mat = displayArea.getComponent(cc.RenderComponent).getMaterial(0);
+        void 0 !== mat.getProperty("sz", 0) && mat.setProperty("sz", [ w * this._viewScale, displayArea.height * this._viewScale ]);
+      };
+      SceneSDFFont.prototype.OnBtnUp = function(e) {
+        var w = parseInt(this.edtWidth.string);
+        w += 1;
+        this.edtWidth.string = w.toString();
+        this.UpdateWidthProperty(w);
+      };
+      SceneSDFFont.prototype.OnBtnDown = function(e) {
+        var w = parseInt(this.edtWidth.string);
+        w -= 1;
+        this.edtWidth.string = w.toString();
+        this.UpdateWidthProperty(w);
+      };
       SceneSDFFont.prototype.UpdateDisplayMatProperties = function() {
         var displayArea = this.displayArea;
         displayArea.position = this._viewCenter;
@@ -3537,12 +4108,117 @@ window.__require = function e(t, n, r) {
       __decorate([ property(cc.Node) ], SceneSDFFont.prototype, "dragArea", void 0);
       __decorate([ property(cc.Label) ], SceneSDFFont.prototype, "targetLabel", void 0);
       __decorate([ property(cc.Node) ], SceneSDFFont.prototype, "displayArea", void 0);
+      __decorate([ property(cc.EditBox) ], SceneSDFFont.prototype, "edtWidth", void 0);
       SceneSDFFont = __decorate([ ccclass ], SceneSDFFont);
       return SceneSDFFont;
     }(cc.Component);
     exports.default = SceneSDFFont;
     cc._RF.pop();
   }, {} ],
+  SceneSDFPhysics: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "60109U08FJLz6hMYJ+X2J6b", "SceneSDFPhysics");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    var SplineTrailRenderer_1 = require("../GraphicsDrawingBoard/Script/SplineTrailRenderer");
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var SceneSDFPhysics = function(_super) {
+      __extends(SceneSDFPhysics, _super);
+      function SceneSDFPhysics() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this.balls = [];
+        _this._isDragging = false;
+        _this._colorIndex = 0;
+        return _this;
+      }
+      SceneSDFPhysics.prototype.onLoad = function() {
+        var physicsManager = cc.director.getPhysicsManager();
+        physicsManager.enabled = true;
+        for (var _i = 0, _a = this.balls; _i < _a.length; _i++) {
+          var ball = _a[_i];
+          ball.on(cc.Node.EventType.TOUCH_START, this.OnTouchBallStart, this);
+          ball.on(cc.Node.EventType.TOUCH_MOVE, this.OnTouchBallMove, this);
+          ball.on(cc.Node.EventType.TOUCH_END, this.OnTouchBallEnd, this);
+          ball.on(cc.Node.EventType.TOUCH_CANCEL, this.OnTouchBallEnd, this);
+        }
+      };
+      SceneSDFPhysics.prototype.start = function() {};
+      SceneSDFPhysics.prototype.OnTouchBallStart = function(e) {
+        this._isDragging = true;
+        var ball = e.target;
+        var body = ball.getComponent(cc.RigidBody);
+        body.linearVelocity = cc.Vec2.ZERO;
+        body.gravityScale = 0;
+        var collider = ball.getComponent(cc.PhysicsCollider);
+        collider.enabled = false;
+        var trail = ball.getComponentInChildren(SplineTrailRenderer_1.SplineTrailRenderer);
+        null === trail || void 0 === trail ? void 0 : trail.Clear();
+      };
+      SceneSDFPhysics.prototype.OnTouchBallMove = function(e) {
+        if (!this._isDragging) return false;
+        var ball = e.target;
+        var pos = ball.position;
+        pos.addSelf(e.getDelta());
+        ball.position = pos;
+      };
+      SceneSDFPhysics.prototype.OnTouchBallEnd = function(e) {
+        this._isDragging = true;
+        var ball = e.target;
+        var body = ball.getComponent(cc.RigidBody);
+        body.gravityScale = 1;
+        body.linearVelocity = cc.director.getPhysicsManager().gravity;
+        var collider = ball.getComponent(cc.PhysicsCollider);
+        collider.enabled = true;
+        var trail = ball.getComponentInChildren(SplineTrailRenderer_1.SplineTrailRenderer);
+        console.log("----- vcount: " + trail._vertices.length);
+      };
+      SceneSDFPhysics.prototype.OnChangeColor = function() {
+        var colors = [ cc.Color.RED, cc.Color.YELLOW, cc.Color.CYAN ];
+        for (var _i = 0, _a = this.balls; _i < _a.length; _i++) {
+          var ball = _a[_i];
+          var trail = ball.getComponentInChildren(SplineTrailRenderer_1.SplineTrailRenderer);
+          var mat = trail.renderer.getMaterial(0);
+          var c = colors[this._colorIndex++];
+          this._colorIndex %= colors.length;
+          mat.setProperty("runtime_color", c);
+          trail.node.color = c;
+        }
+      };
+      __decorate([ property([ cc.Node ]) ], SceneSDFPhysics.prototype, "balls", void 0);
+      SceneSDFPhysics = __decorate([ ccclass ], SceneSDFPhysics);
+      return SceneSDFPhysics;
+    }(cc.Component);
+    exports.default = SceneSDFPhysics;
+    cc._RF.pop();
+  }, {
+    "../GraphicsDrawingBoard/Script/SplineTrailRenderer": "SplineTrailRenderer"
+  } ],
   SceneSDF: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "c0baeCexs1O36cWxtIx48zu", "SceneSDF");
@@ -3590,10 +4266,9 @@ window.__require = function e(t, n, r) {
         _this.materials = [];
         _this.lblHint = null;
         _this._hints = new Map([ [ "SpriteRaw", "\u539f\u59cbSDF\u7eb9\u7406" ], [ "SDFGradient", "\u8ddd\u79bb\u6620\u5c04\u5230\u7070\u5ea6" ], [ "SDFMorph", "\u5f62\u53d8" ], [ "SDFBloom", "\u9713\u8679\u706f" ], [ "SDFOutline0", "\u63cf\u8fb9" ], [ "SDFSelect", "\u6846\u9009\u52a8\u753b" ], [ "SDFOutline2", "\u5916\u53d1\u5149" ], [ "SDFRawTest", "" ], [ "SDFGlow", "\u5916\u53d1\u51492" ], [ "SDFSquiggle", "\u624b\u7ed8\u7ebf\u63cf" ], [ "SDFColorPallete", "\u989c\u8272\u6e10\u53d8" ], [ "SDFContour", "\u7b49\u9ad8\u7ebf" ], [ "SDFDropShadow", "\u6295\u5f71" ], [ "SDFFake3D", "\u4f2a3D" ] ]);
-        _this._textureSize = cc.size(1024, 1024);
         _this._maxDist = 17;
-        _this._imageIndex = 0;
-        _this._effectIndex = 0;
+        _this._imageIndex = 3;
+        _this._effectIndex = 1;
         return _this;
       }
       TestSDF.prototype.onLoad = function() {
@@ -3604,12 +4279,14 @@ window.__require = function e(t, n, r) {
       TestSDF.prototype.start = function() {
         this._edt = new EDT_1.EDT();
         this._edtaa3 = new EDTAA3_1.EDTAA3();
-        this._imageIndex = -1;
-        this.NextImage();
-        this.UpdateHint(0);
+        this.ApplyImage(this._imageIndex);
+        this.ApplyEffect(this._effectIndex);
       };
       TestSDF.prototype.NextImage = function() {
         var index = this._imageIndex = (this._imageIndex + 1) % this.images.length;
+        this.ApplyImage(index);
+      };
+      TestSDF.prototype.ApplyImage = function(index) {
         var sf = this.images[index];
         var sz = sf.getOriginalSize();
         this.objNode.getComponent(cc.Sprite).spriteFrame = sf;
@@ -3644,6 +4321,9 @@ window.__require = function e(t, n, r) {
       };
       TestSDF.prototype.NextEffect = function() {
         var index = this._effectIndex = (this._effectIndex + 1) % this.materials.length;
+        this.ApplyEffect(index);
+      };
+      TestSDF.prototype.ApplyEffect = function(index) {
         this.UpdateHint(index);
         var mat = this.materials[index];
         for (var i = 0; i < 2; ++i) {
@@ -4180,10 +4860,10 @@ window.__require = function e(t, n, r) {
         return _this;
       }
       SimpleDraggable.prototype.onLoad = function() {
-        this.node.on(cc.Node.EventType.TOUCH_START, this.OnTouchStart.bind(this));
-        this.node.on(cc.Node.EventType.TOUCH_MOVE, this.OnTouchMove.bind(this));
-        this.node.on(cc.Node.EventType.TOUCH_END, this.OnTouchEnd.bind(this));
-        this.node.on(cc.Node.EventType.TOUCH_CANCEL, this.OnTouchEnd.bind(this));
+        this.node.on(cc.Node.EventType.TOUCH_START, this.OnTouchStart, this);
+        this.node.on(cc.Node.EventType.TOUCH_MOVE, this.OnTouchMove, this);
+        this.node.on(cc.Node.EventType.TOUCH_END, this.OnTouchEnd, this);
+        this.node.on(cc.Node.EventType.TOUCH_CANCEL, this.OnTouchEnd, this);
       };
       SimpleDraggable.prototype.Setup = function(moveCallback) {
         this._moveCallback = moveCallback;
@@ -4216,6 +4896,1549 @@ window.__require = function e(t, n, r) {
     exports.default = SimpleDraggable;
     cc._RF.pop();
   }, {} ],
+  SmoothTrailAssembler: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "906baeaHW9P8abUKvaWgruv", "SmoothTrailAssembler");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    exports.SmoothTrailAssembler = void 0;
+    var PointFlags = cc.Graphics.Types.PointFlags;
+    var LineJoin = cc.Graphics.Types.LineJoin;
+    var LineCap = cc.Graphics.Types.LineCap;
+    var SmoothTrail_1 = require("./SmoothTrail");
+    cc.game.on(cc.game.EVENT_ENGINE_INITED, function() {});
+    var MAX_VERTEX = 65535;
+    var MAX_INDICE = 2 * MAX_VERTEX;
+    var PI = Math.PI;
+    var min = Math.min;
+    var max = Math.max;
+    var ceil = Math.ceil;
+    var acos = Math.acos;
+    var cos = Math.cos;
+    var sin = Math.sin;
+    var atan2 = Math.atan2;
+    function curveDivs(r, arc, tol) {
+      var da = 2 * acos(r / (r + tol));
+      return max(2, ceil(arc / da));
+    }
+    function clamp(v, min, max) {
+      if (v < min) return min;
+      if (v > max) return max;
+      return v;
+    }
+    var gfx = cc.gfx;
+    var vfmtPosColorSdf = new gfx.VertexFormat([ {
+      name: gfx.ATTR_POSITION,
+      type: gfx.ATTR_TYPE_FLOAT32,
+      num: 2
+    }, {
+      name: gfx.ATTR_COLOR,
+      type: gfx.ATTR_TYPE_UINT8,
+      num: 4,
+      normalize: true
+    }, {
+      name: "a_dist",
+      type: gfx.ATTR_TYPE_FLOAT32,
+      num: 1
+    } ]);
+    vfmtPosColorSdf.name = "vfmtPosColorSdf";
+    var SmoothTrailAssembler = function(_super) {
+      __extends(SmoothTrailAssembler, _super);
+      function SmoothTrailAssembler(graphics) {
+        var _this = _super.call(this) || this;
+        _this._buffer = null;
+        _this._buffers = [];
+        _this._bufferOffset = 0;
+        _this._curColor = 0;
+        _this._trailBuff = null;
+        _this.PATH_VERTEX = 2048;
+        _this._pathVertexStart = 0;
+        _this._vertexHead = 0;
+        return _this;
+      }
+      SmoothTrailAssembler.prototype.getVfmt = function() {
+        return vfmtPosColorSdf;
+      };
+      SmoothTrailAssembler.prototype.getVfmtFloatCount = function() {
+        return 4;
+      };
+      SmoothTrailAssembler.prototype.requestBuffer = function(dummy) {
+        var buffer = {
+          indiceStart: 0,
+          vertexStart: 0,
+          meshbuffer: null,
+          ia: null
+        };
+        var meshbuffer = new cc.MeshBuffer(cc.renderer._handle, this.getVfmt());
+        buffer.meshbuffer = meshbuffer;
+        var ia = new cc.renderer.InputAssembler(meshbuffer._vb, meshbuffer._ib);
+        buffer.ia = ia;
+        this._buffers.push(buffer);
+        return buffer;
+      };
+      SmoothTrailAssembler.prototype.getBuffers = function() {
+        0 === this._buffers.length && this.requestBuffer();
+        return this._buffers;
+      };
+      SmoothTrailAssembler.prototype.clear = function(clean) {
+        this._bufferOffset = 0;
+        var datas = this._buffers;
+        if (clean) {
+          for (var i = 0, l = datas.length; i < l; i++) {
+            var data = datas[i];
+            data.meshbuffer.destroy();
+            data.meshbuffer = null;
+          }
+          datas.length = 0;
+        } else for (var i = 0, l = datas.length; i < l; i++) {
+          var data = datas[i];
+          data.indiceStart = 0;
+          data.vertexStart = 0;
+          var meshbuffer = data.meshbuffer;
+          meshbuffer.reset();
+        }
+      };
+      SmoothTrailAssembler.prototype.fillBuffers = function(graphics, renderer) {
+        renderer._flush();
+        renderer.node = graphics.node;
+        renderer.material = graphics._materials[0];
+        var buffers = this.getBuffers();
+        for (var index = 0, length = buffers.length; index < length; index++) {
+          var buffer = buffers[index];
+          var meshbuffer = buffer.meshbuffer;
+          buffer.ia._count = buffer.indiceStart;
+          renderer._flushIA(buffer.ia);
+          meshbuffer.uploadData();
+        }
+      };
+      SmoothTrailAssembler.prototype.genBuffer = function(graphics, cverts) {
+        var buffers = this.getBuffers();
+        var buffer = buffers[this._bufferOffset];
+        var meshbuffer = buffer.meshbuffer;
+        var maxVertsCount = buffer.vertexStart + cverts;
+        if (maxVertsCount > MAX_VERTEX || 3 * maxVertsCount > MAX_INDICE) {
+          ++this._bufferOffset;
+          maxVertsCount = cverts;
+          if (this._bufferOffset < buffers.length) buffer = buffers[this._bufferOffset]; else {
+            buffer = this.requestBuffer(graphics);
+            buffers[this._bufferOffset] = buffer;
+          }
+          meshbuffer = buffer.meshbuffer;
+        }
+        maxVertsCount > meshbuffer.vertexOffset && meshbuffer.requestStatic(cverts, 3 * cverts);
+        this._buffer = buffer;
+        return buffer;
+      };
+      SmoothTrailAssembler.prototype.stroke = function(graphics) {
+        this._curColor = graphics._strokeColor._val;
+        this._flattenPaths(graphics._impl);
+        this._expandStroke(graphics);
+        graphics._impl._updatePathOffset = true;
+      };
+      SmoothTrailAssembler.prototype.fill = function(graphics) {
+        this._curColor = graphics._fillColor._val;
+        this._expandFill(graphics);
+        graphics._impl._updatePathOffset = true;
+      };
+      SmoothTrailAssembler.prototype._expandStroke = function(graphics) {
+        var w = .5 * graphics.lineWidth, lineCap = graphics.lineCap, lineJoin = graphics.lineJoin, miterLimit = graphics.miterLimit;
+        var impl = graphics._impl;
+        var ncap = curveDivs(w, PI, impl._tessTol);
+        this._calculateJoins(impl, w, lineJoin, miterLimit);
+        var paths = impl._paths;
+        var cverts = 0;
+        for (var i = impl._pathOffset, l = impl._pathLength; i < l; i++) {
+          var path = paths[i];
+          var pointsLength = path.points.length;
+          lineJoin === LineJoin.ROUND ? cverts += 2 * (pointsLength + path.nbevel * (ncap + 2) + 1) : cverts += 2 * (pointsLength + 5 * path.nbevel + 1);
+          path.closed || (lineCap === LineCap.ROUND ? cverts += 2 * (2 * ncap + 2) : cverts += 12);
+        }
+        var buffer = this.genBuffer(graphics, cverts), meshbuffer = buffer.meshbuffer, vData = meshbuffer._vData, iData = meshbuffer._iData;
+        for (var i = impl._pathOffset, l = impl._pathLength; i < l; i++) {
+          var path = paths[i];
+          var pts = path.points;
+          var pointsLength = pts.length;
+          var offset = buffer.vertexStart;
+          var p0 = void 0, p1 = void 0;
+          var start = void 0, end = void 0, loop = void 0;
+          loop = path.closed;
+          if (loop) {
+            p0 = pts[pointsLength - 1];
+            p1 = pts[0];
+            start = 0;
+            end = pointsLength;
+          } else {
+            p0 = pts[0];
+            p1 = pts[1];
+            start = 1;
+            end = pointsLength - 1;
+          }
+          p1 = p1 || p0;
+          if (!loop) {
+            var dPos = p1.sub(p0);
+            dPos.normalizeSelf();
+            var dx = dPos.x;
+            var dy = dPos.y;
+            lineCap === LineCap.BUTT ? this._buttCapStart(p0, dx, dy, w, 0) : lineCap === LineCap.SQUARE ? this._buttCapStart(p0, dx, dy, w, w) : lineCap === LineCap.ROUND && this._roundCapStart(p0, dx, dy, w, ncap);
+          }
+          for (var j = start; j < end; ++j) {
+            if (lineJoin === LineJoin.ROUND) this._roundJoin(p0, p1, w, w, ncap); else if (0 !== (p1.flags & (PointFlags.PT_BEVEL | PointFlags.PT_INNERBEVEL))) this._bevelJoin(p0, p1, w, w); else {
+              this._vset(p1.x + p1.dmx * w, p1.y + p1.dmy * w, 1);
+              this._vset(p1.x - p1.dmx * w, p1.y - p1.dmy * w, -1);
+            }
+            p0 = p1;
+            p1 = pts[j + 1];
+          }
+          if (loop) {
+            var floatCount = this.getVfmtFloatCount();
+            var vDataoOfset = offset * floatCount;
+            this._vset(vData[vDataoOfset], vData[vDataoOfset + 1], 1);
+            this._vset(vData[vDataoOfset + floatCount], vData[vDataoOfset + floatCount + 1], -1);
+          } else {
+            var dPos = p1.sub(p0);
+            dPos.normalizeSelf();
+            var dx = dPos.x;
+            var dy = dPos.y;
+            lineCap === LineCap.BUTT ? this._buttCapEnd(p1, dx, dy, w, 0) : lineCap === LineCap.SQUARE ? this._buttCapEnd(p1, dx, dy, w, w) : lineCap === LineCap.ROUND && this._roundCapEnd(p1, dx, dy, w, ncap);
+          }
+          var indicesOffset = buffer.indiceStart;
+          for (var start_1 = offset + 2, end_1 = buffer.vertexStart; start_1 < end_1; start_1++) {
+            iData[indicesOffset++] = start_1 - 2;
+            iData[indicesOffset++] = start_1 - 1;
+            iData[indicesOffset++] = start_1;
+          }
+          buffer.indiceStart = indicesOffset;
+        }
+      };
+      SmoothTrailAssembler.prototype._expandFill = function(graphics) {
+        var Earcut = cc.Graphics.earcut;
+        var impl = graphics._impl;
+        var paths = impl._paths;
+        var cverts = 0;
+        for (var i = impl._pathOffset, l = impl._pathLength; i < l; i++) {
+          var path = paths[i];
+          var pointsLength = path.points.length;
+          cverts += pointsLength;
+        }
+        var buffer = this.genBuffer(graphics, cverts), meshbuffer = buffer.meshbuffer, vData = meshbuffer._vData, iData = meshbuffer._iData;
+        for (var i = impl._pathOffset, l = impl._pathLength; i < l; i++) {
+          var path = paths[i];
+          var pts = path.points;
+          var pointsLength = pts.length;
+          if (0 === pointsLength) continue;
+          var offset = buffer.vertexStart;
+          for (var j = 0; j < pointsLength; ++j) this._vset(pts[j].x, pts[j].y);
+          var indicesOffset = buffer.indiceStart;
+          if (path.complex) {
+            var earcutData = [];
+            var floatCount = this.getVfmtFloatCount();
+            for (var j = offset, end = buffer.vertexStart; j < end; j++) {
+              var vDataOffset = j * floatCount;
+              earcutData.push(vData[vDataOffset]);
+              earcutData.push(vData[vDataOffset + 1]);
+            }
+            var newIndices = Earcut(earcutData, null, 2);
+            if (!newIndices || 0 === newIndices.length) continue;
+            for (var j = 0, nIndices = newIndices.length; j < nIndices; j++) iData[indicesOffset++] = newIndices[j] + offset;
+          } else {
+            var first = offset;
+            for (var start = offset + 2, end = buffer.vertexStart; start < end; start++) {
+              iData[indicesOffset++] = first;
+              iData[indicesOffset++] = start - 1;
+              iData[indicesOffset++] = start;
+            }
+          }
+          buffer.indiceStart = indicesOffset;
+        }
+      };
+      SmoothTrailAssembler.prototype._calculateJoins = function(impl, w, lineJoin, miterLimit) {
+        var iw = 0;
+        var w2 = w * w;
+        w > 0 && (iw = 1 / w);
+        var paths = impl._paths;
+        for (var i = impl._pathOffset, l = impl._pathLength; i < l; i++) {
+          var path = paths[i];
+          var pts = path.points;
+          var ptsLength = pts.length;
+          var p0 = pts[ptsLength - 1];
+          var p1 = pts[0];
+          var nleft = 0;
+          path.nbevel = 0;
+          for (var j = 0; j < ptsLength; j++) {
+            var dmr2 = void 0, cross = void 0, limit = void 0;
+            var dlx0 = p0.dy;
+            var dly0 = -p0.dx;
+            var dlx1 = p1.dy;
+            var dly1 = -p1.dx;
+            p1.dmx = .5 * (dlx0 + dlx1);
+            p1.dmy = .5 * (dly0 + dly1);
+            dmr2 = p1.dmx * p1.dmx + p1.dmy * p1.dmy;
+            if (dmr2 > 1e-6) {
+              var scale = 1 / dmr2;
+              scale > 600 && (scale = 600);
+              p1.dmx *= scale;
+              p1.dmy *= scale;
+            }
+            cross = p1.dx * p0.dy - p0.dx * p1.dy;
+            if (cross > 0) {
+              nleft++;
+              p1.flags |= PointFlags.PT_LEFT;
+            }
+            limit = max(11, min(p0.len, p1.len) * iw);
+            dmr2 * limit * limit < 1 && (p1.flags |= PointFlags.PT_INNERBEVEL);
+            var dmwx = p1.dmx * w;
+            var dmwy = p1.dmy * w;
+            var dmlen2 = dmwx * dmwx + dmwy * dmwy;
+            dmlen2 > p1.len * p1.len + w2 && dmlen2 > p0.len * p0.len + w2 && (p1.flags |= PointFlags.PT_INNERBEVEL);
+            p1.flags & PointFlags.PT_CORNER && (dmr2 * miterLimit * miterLimit < 1 || lineJoin === LineJoin.BEVEL || lineJoin === LineJoin.ROUND) && (p1.flags |= PointFlags.PT_BEVEL);
+            0 !== (p1.flags & (PointFlags.PT_BEVEL | PointFlags.PT_INNERBEVEL)) && path.nbevel++;
+            p0 = p1;
+            p1 = pts[j + 1];
+          }
+        }
+      };
+      SmoothTrailAssembler.prototype._flattenPaths = function(impl) {
+        var paths = impl._paths;
+        for (var i = impl._pathOffset, l = impl._pathLength; i < l; i++) {
+          var path = paths[i];
+          var pts = path.points;
+          var p0 = pts[pts.length - 1];
+          var p1 = pts[0];
+          if (pts.length > 2 && p0.equals(p1)) {
+            path.closed = true;
+            pts.pop();
+            p0 = pts[pts.length - 1];
+          }
+          for (var j = 0, size = pts.length; j < size; j++) {
+            var dPos = p1.sub(p0);
+            p0.len = dPos.mag();
+            (dPos.x || dPos.y) && dPos.normalizeSelf();
+            p0.dx = dPos.x;
+            p0.dy = dPos.y;
+            p0 = p1;
+            p1 = pts[j + 1];
+          }
+        }
+      };
+      SmoothTrailAssembler.prototype._chooseBevel = function(bevel, p0, p1, w) {
+        var x = p1.x;
+        var y = p1.y;
+        var x0, y0, x1, y1;
+        if (0 !== bevel) {
+          x0 = x + p0.dy * w;
+          y0 = y - p0.dx * w;
+          x1 = x + p1.dy * w;
+          y1 = y - p1.dx * w;
+        } else {
+          x0 = x1 = x + p1.dmx * w;
+          y0 = y1 = y + p1.dmy * w;
+        }
+        return [ x0, y0, x1, y1 ];
+      };
+      SmoothTrailAssembler.prototype._buttCapStart = function(p, dx, dy, w, d) {
+        var px = p.x - dx * d;
+        var py = p.y - dy * d;
+        var dlx = dy;
+        var dly = -dx;
+        this._vset(px + dlx * w, py + dly * w, 1);
+        this._vset(px - dlx * w, py - dly * w, -1);
+      };
+      SmoothTrailAssembler.prototype._buttCapEnd = function(p, dx, dy, w, d) {
+        var px = p.x + dx * d;
+        var py = p.y + dy * d;
+        var dlx = dy;
+        var dly = -dx;
+        this._vset(px + dlx * w, py + dly * w, 1);
+        this._vset(px - dlx * w, py - dly * w, -1);
+      };
+      SmoothTrailAssembler.prototype._roundCapStart = function(p, dx, dy, w, ncap) {
+        var px = p.x;
+        var py = p.y;
+        var dlx = dy;
+        var dly = -dx;
+        for (var i = 0; i < ncap; i++) {
+          var a = i / (ncap - 1) * PI;
+          var ax = cos(a) * w, ay = sin(a) * w;
+          this._vset(px - dlx * ax - dx * ay, py - dly * ax - dy * ay, 1);
+          this._vset(px, py, 0);
+        }
+        this._vset(px + dlx * w, py + dly * w, 1);
+        this._vset(px - dlx * w, py - dly * w, -1);
+      };
+      SmoothTrailAssembler.prototype._roundCapEnd = function(p, dx, dy, w, ncap) {
+        var px = p.x;
+        var py = p.y;
+        var dlx = dy;
+        var dly = -dx;
+        this._vset(px + dlx * w, py + dly * w, 1);
+        this._vset(px - dlx * w, py - dly * w, -1);
+        for (var i = 0; i < ncap; i++) {
+          var a = i / (ncap - 1) * PI;
+          var ax = cos(a) * w, ay = sin(a) * w;
+          this._vset(px, py, 0);
+          this._vset(px - dlx * ax + dx * ay, py - dly * ax + dy * ay, 1);
+        }
+      };
+      SmoothTrailAssembler.prototype._roundJoin = function(p0, p1, lw, rw, ncap) {
+        var dlx0 = p0.dy;
+        var dly0 = -p0.dx;
+        var dlx1 = p1.dy;
+        var dly1 = -p1.dx;
+        var p1x = p1.x;
+        var p1y = p1.y;
+        if (0 !== (p1.flags & PointFlags.PT_LEFT)) {
+          var out = this._chooseBevel(p1.flags & PointFlags.PT_INNERBEVEL, p0, p1, lw);
+          var lx0 = out[0];
+          var ly0 = out[1];
+          var lx1 = out[2];
+          var ly1 = out[3];
+          var a0 = atan2(-dly0, -dlx0);
+          var a1 = atan2(-dly1, -dlx1);
+          a1 > a0 && (a1 -= 2 * PI);
+          this._vset(lx0, ly0, 1);
+          this._vset(p1x - dlx0 * rw, p1.y - dly0 * rw, -1);
+          var n = clamp(ceil((a0 - a1) / PI) * ncap, 2, ncap);
+          for (var i = 0; i < n; i++) {
+            var u = i / (n - 1);
+            var a = a0 + u * (a1 - a0);
+            var rx = p1x + cos(a) * rw;
+            var ry = p1y + sin(a) * rw;
+            this._vset(p1x, p1y, 0);
+            this._vset(rx, ry, -1);
+          }
+          this._vset(lx1, ly1, 1);
+          this._vset(p1x - dlx1 * rw, p1y - dly1 * rw, -1);
+        } else {
+          var out = this._chooseBevel(p1.flags & PointFlags.PT_INNERBEVEL, p0, p1, -rw);
+          var rx0 = out[0];
+          var ry0 = out[1];
+          var rx1 = out[2];
+          var ry1 = out[3];
+          var a0 = atan2(dly0, dlx0);
+          var a1 = atan2(dly1, dlx1);
+          a1 < a0 && (a1 += 2 * PI);
+          this._vset(p1x + dlx0 * rw, p1y + dly0 * rw, 1);
+          this._vset(rx0, ry0, -1);
+          var n = clamp(ceil((a1 - a0) / PI) * ncap, 2, ncap);
+          for (var i = 0; i < n; i++) {
+            var u = i / (n - 1);
+            var a = a0 + u * (a1 - a0);
+            var lx = p1x + cos(a) * lw;
+            var ly = p1y + sin(a) * lw;
+            this._vset(lx, ly, 1);
+            this._vset(p1x, p1y, 0);
+          }
+          this._vset(p1x + dlx1 * rw, p1y + dly1 * rw, 1);
+          this._vset(rx1, ry1, -1);
+        }
+      };
+      SmoothTrailAssembler.prototype._bevelJoin = function(p0, p1, lw, rw) {
+        var rx0, ry0, rx1, ry1;
+        var lx0, ly0, lx1, ly1;
+        var dlx0 = p0.dy;
+        var dly0 = -p0.dx;
+        var dlx1 = p1.dy;
+        var dly1 = -p1.dx;
+        if (p1.flags & PointFlags.PT_LEFT) {
+          var out = this._chooseBevel(p1.flags & PointFlags.PT_INNERBEVEL, p0, p1, lw);
+          lx0 = out[0];
+          ly0 = out[1];
+          lx1 = out[2];
+          ly1 = out[3];
+          this._vset(lx0, ly0, 1);
+          this._vset(p1.x - dlx0 * rw, p1.y - dly0 * rw, -1);
+          this._vset(lx1, ly1, 1);
+          this._vset(p1.x - dlx1 * rw, p1.y - dly1 * rw, -1);
+        } else {
+          var out = this._chooseBevel(p1.flags & PointFlags.PT_INNERBEVEL, p0, p1, -rw);
+          rx0 = out[0];
+          ry0 = out[1];
+          rx1 = out[2];
+          ry1 = out[3];
+          this._vset(p1.x + dlx0 * lw, p1.y + dly0 * lw, 1);
+          this._vset(rx0, ry0, -1);
+          this._vset(p1.x + dlx1 * lw, p1.y + dly1 * lw, 1);
+          this._vset(rx1, ry1, -1);
+        }
+      };
+      SmoothTrailAssembler.prototype._vset = function(x, y, distance) {
+        void 0 === distance && (distance = 0);
+        var buffer = this._buffer;
+        var meshbuffer = buffer.meshbuffer;
+        var dataOffset = buffer.vertexStart * this.getVfmtFloatCount();
+        var vData = meshbuffer._vData;
+        var uintVData = meshbuffer._uintVData;
+        vData[dataOffset] = x;
+        vData[dataOffset + 1] = y;
+        uintVData[dataOffset + 2] = this._curColor;
+        vData[dataOffset + 3] = distance;
+        buffer.vertexStart++;
+        meshbuffer._dirty = true;
+      };
+      SmoothTrailAssembler.prototype.strokeV2 = function(graphics, sp, ep) {
+        this._expandStrokeV2(graphics, sp, ep);
+      };
+      SmoothTrailAssembler.prototype._flattenPathsV2 = function(impl, sp, ep) {
+        var paths = impl._paths;
+        var i = impl._pathOffset;
+        var path = paths[i];
+        var pts = path.points;
+        for (var j = sp; j <= ep; ++j) {
+          var p0 = pts[j];
+          var p1 = pts[j + 1];
+          var dPos = p1.sub(p0);
+          p0.len = dPos.mag();
+          (dPos.x || dPos.y) && dPos.normalizeSelf();
+          p0.dx = dPos.x;
+          p0.dy = dPos.y;
+        }
+      };
+      SmoothTrailAssembler.prototype.RollBack = function(graphics, index) {
+        var impl = graphics._impl;
+        var paths = impl._paths;
+        var i = impl._pathOffset;
+        var path = paths[i];
+        var vertCount = path.vertCount;
+        var buffer = this._trailBuff;
+        var count = vertCount[index];
+        buffer.vertexStart -= count;
+        index > 0 && (buffer.indiceStart -= 3 * count);
+        this._vertexHead -= count;
+        impl.erase(index);
+      };
+      SmoothTrailAssembler.prototype.HasSmoothCorner = function(graphics, sp) {
+        var w = .5 * graphics.lineWidth, lineCap = graphics.lineCap, lineJoin = graphics.lineJoin, miterLimit = graphics.miterLimit;
+        var impl = graphics._impl;
+        var iw = 0;
+        var w2 = w * w;
+        w > 0 && (iw = 1 / w);
+        var paths = impl._paths;
+        var i = impl._pathOffset;
+        var path = paths[i];
+        var pts = path.points;
+        var p0 = pts[sp];
+        var p1 = pts[sp + 1];
+        var dmr2, cross, limit;
+        var dlx0 = p0.dy;
+        var dly0 = -p0.dx;
+        var dlx1 = p1.dy;
+        var dly1 = -p1.dx;
+        p1.dmx = .5 * (dlx0 + dlx1);
+        p1.dmy = .5 * (dly0 + dly1);
+        dmr2 = p1.dmx * p1.dmx + p1.dmy * p1.dmy;
+        if (dmr2 > 1e-6) {
+          var scale = 1 / dmr2;
+          scale > 600 && (scale = 600);
+          p1.dmx *= scale;
+          p1.dmy *= scale;
+        }
+        limit = max(11, min(p0.len, p1.len) * iw);
+        if (dmr2 * limit * limit < 1) return false;
+        var dmwx = p1.dmx * w;
+        var dmwy = p1.dmy * w;
+        var dmlen2 = dmwx * dmwx + dmwy * dmwy;
+        if (dmlen2 > p1.len * p1.len + w2 && dmlen2 > p0.len * p0.len + w2) return false;
+        return true;
+      };
+      SmoothTrailAssembler.prototype._expandStrokeV2 = function(graphics, sp, ep) {
+        var w = .5 * graphics.lineWidth, lineCap = graphics.lineCap, lineJoin = graphics.lineJoin, miterLimit = graphics.miterLimit;
+        var impl = graphics._impl;
+        var ncap = curveDivs(w, PI, impl._tessTol);
+        this._calculateJoinsV2(impl, w, lineJoin, miterLimit, sp, ep);
+        var paths = impl._paths;
+        var i = impl._pathOffset;
+        var path = paths[i];
+        var pts = path.points;
+        var buffer = this._trailBuff;
+        for (var j = sp; j < ep; ++j) {
+          var preCount = buffer.vertexStart;
+          var p0 = pts[j];
+          var p1 = pts[j + 1];
+          if (lineJoin === LineJoin.ROUND) this._roundJoin(p0, p1, w, w, ncap); else if (0 !== (p1.flags & (PointFlags.PT_BEVEL | PointFlags.PT_INNERBEVEL))) this._bevelJoin(p0, p1, w, w); else {
+            this._vset(p1.x + p1.dmx * w, p1.y + p1.dmy * w, 1);
+            this._vset(p1.x - p1.dmx * w, p1.y - p1.dmy * w, -1);
+          }
+          path.vertCount[j + 1] = buffer.vertexStart - preCount;
+        }
+        this.FlushIndices(graphics);
+      };
+      SmoothTrailAssembler.prototype.FlushIndices = function(graphics) {
+        var buffer = this._trailBuff;
+        var meshbuffer = buffer.meshbuffer, vData = meshbuffer._vData, iData = meshbuffer._iData;
+        var indicesOffset = buffer.indiceStart;
+        var offset = this._vertexHead;
+        offset == this._pathVertexStart && (offset += 2);
+        for (var start = offset, end = buffer.vertexStart; start < end; start++) {
+          iData[indicesOffset++] = start - 2;
+          iData[indicesOffset++] = start - 1;
+          iData[indicesOffset++] = start;
+        }
+        this._vertexHead = buffer.vertexStart;
+        buffer.indiceStart = indicesOffset;
+      };
+      SmoothTrailAssembler.prototype._calculateJoinsV2 = function(impl, w, lineJoin, miterLimit, sp, ep) {
+        var iw = 0;
+        var w2 = w * w;
+        w > 0 && (iw = 1 / w);
+        var paths = impl._paths;
+        var i = impl._pathOffset;
+        var path = paths[i];
+        var pts = path.points;
+        var ptsLength = pts.length;
+        var nleft = 0;
+        for (;sp < ep; ++sp) {
+          var p0 = pts[sp];
+          var p1 = pts[sp + 1];
+          var dmr2 = void 0, cross = void 0, limit = void 0;
+          var dlx0 = p0.dy;
+          var dly0 = -p0.dx;
+          var dlx1 = p1.dy;
+          var dly1 = -p1.dx;
+          p1.dmx = .5 * (dlx0 + dlx1);
+          p1.dmy = .5 * (dly0 + dly1);
+          dmr2 = p1.dmx * p1.dmx + p1.dmy * p1.dmy;
+          if (dmr2 > 1e-6) {
+            var scale = 1 / dmr2;
+            scale > 600 && (scale = 600);
+            p1.dmx *= scale;
+            p1.dmy *= scale;
+          }
+          cross = p1.dx * p0.dy - p0.dx * p1.dy;
+          if (cross > 0) {
+            nleft++;
+            p1.flags |= PointFlags.PT_LEFT;
+          }
+          limit = max(11, min(p0.len, p1.len) * iw);
+          dmr2 * limit * limit < 1 && (p1.flags |= PointFlags.PT_INNERBEVEL);
+          var dmwx = p1.dmx * w;
+          var dmwy = p1.dmy * w;
+          var dmlen2 = dmwx * dmwx + dmwy * dmwy;
+          dmlen2 > p1.len * p1.len + w2 && dmlen2 > p0.len * p0.len + w2 && (p1.flags |= PointFlags.PT_INNERBEVEL);
+          p1.flags & PointFlags.PT_CORNER && (dmr2 * miterLimit * miterLimit < 1 || lineJoin === LineJoin.BEVEL || lineJoin === LineJoin.ROUND) && (p1.flags |= PointFlags.PT_BEVEL);
+          0 !== (p1.flags & (PointFlags.PT_BEVEL | PointFlags.PT_INNERBEVEL)) && path.nbevel++;
+        }
+      };
+      SmoothTrailAssembler.prototype.CapStart = function(graphics, sp) {
+        var cverts = this.PATH_VERTEX;
+        var buffer = this._trailBuff = this.genBuffer(graphics, cverts);
+        this._vertexHead = this._pathVertexStart = buffer.vertexStart;
+        var impl = graphics._impl;
+        var i = impl._pathOffset;
+        var paths = impl._paths;
+        var path = paths[i];
+        var pts = path.points;
+        var w = .5 * graphics.lineWidth, lineCap = graphics.lineCap, lineJoin = graphics.lineJoin, miterLimit = graphics.miterLimit;
+        var ncap = curveDivs(w, PI, impl._tessTol);
+        var p0 = pts[sp];
+        var p1 = pts[sp + 1];
+        var dPos = p1.sub(p0);
+        dPos.normalizeSelf();
+        var dx = dPos.x;
+        var dy = dPos.y;
+        var preCount = buffer.vertexStart;
+        lineCap === LineCap.BUTT ? this._buttCapStart(p0, dx, dy, w, 0) : lineCap === LineCap.SQUARE ? this._buttCapStart(p0, dx, dy, w, w) : lineCap === LineCap.ROUND && this._roundCapStart(p0, dx, dy, w, ncap);
+        path.vertCount[sp] = buffer.vertexStart - preCount;
+      };
+      SmoothTrailAssembler.prototype.CapEnd = function(graphics, sp) {
+        var impl = graphics._impl;
+        var i = impl._pathOffset;
+        var paths = impl._paths;
+        var path = paths[i];
+        var pts = path.points;
+        var w = .5 * graphics.lineWidth, lineCap = graphics.lineCap, lineJoin = graphics.lineJoin, miterLimit = graphics.miterLimit;
+        var ncap = curveDivs(w, PI, impl._tessTol);
+        var p0 = pts[sp];
+        var p1 = pts[sp + 1];
+        var dPos = p1.sub(p0);
+        dPos.normalizeSelf();
+        var dx = dPos.x;
+        var dy = dPos.y;
+        lineCap === LineCap.BUTT ? this._buttCapEnd(p1, dx, dy, w, 0) : lineCap === LineCap.SQUARE ? this._buttCapEnd(p1, dx, dy, w, w) : lineCap === LineCap.ROUND && this._roundCapEnd(p1, dx, dy, w, ncap);
+        this.FlushIndices(graphics);
+        console.log("Mesh Size: " + (this._vertexHead - this._pathVertexStart));
+      };
+      return SmoothTrailAssembler;
+    }(cc.Assembler);
+    exports.SmoothTrailAssembler = SmoothTrailAssembler;
+    cc.Assembler.register(SmoothTrail_1.SmoothTrail, SmoothTrailAssembler);
+    cc._RF.pop();
+  }, {
+    "./SmoothTrail": "SmoothTrail"
+  } ],
+  SmoothTrailImpl: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "c1857Rdc7xJ9JY2QnmsJzhB", "SmoothTrailImpl");
+    "use strict";
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    exports.SmoothTrailImpl = void 0;
+    var Helper = cc.Graphics.Helper;
+    var PointFlags = cc.Graphics.Types.PointFlags;
+    var Path = function() {
+      function Path() {
+        this.points = [];
+        this.vertCount = [];
+        this.reset();
+      }
+      Path.prototype.reset = function() {
+        this.closed = false;
+        this.nbevel = 0;
+        this.complex = true;
+        if (this.points) {
+          this.points.length = 0;
+          this.vertCount.length = 0;
+        } else {
+          this.points = [];
+          this.vertCount = [];
+        }
+      };
+      return Path;
+    }();
+    var SmoothTrailImpl = function() {
+      function SmoothTrailImpl() {
+        this._tessTol = .25;
+        this._distTol = .01;
+        this._updatePathOffset = false;
+        this._pathLength = 0;
+        this._pathOffset = 0;
+        this._pointsOffset = 0;
+        this._commandx = 0;
+        this._commandy = 0;
+        this._paths = [];
+        this._points = [];
+        this._curPath = null;
+      }
+      SmoothTrailImpl.prototype.erase = function(index) {
+        var path = this._curPath;
+        path.points.splice(index, 1);
+        path.vertCount.splice(index, 1);
+        this._points.splice(index, 1);
+      };
+      SmoothTrailImpl.prototype.moveTo = function(x, y) {
+        if (this._updatePathOffset) {
+          this._pathOffset = this._pathLength;
+          this._updatePathOffset = false;
+        }
+        this._addPath();
+        this._addPoint(x, y, PointFlags.PT_CORNER);
+        this._commandx = x;
+        this._commandy = y;
+      };
+      SmoothTrailImpl.prototype.lineTo = function(x, y) {
+        this._addPoint(x, y, PointFlags.PT_CORNER);
+        this._commandx = x;
+        this._commandy = y;
+      };
+      SmoothTrailImpl.prototype.bezierCurveTo = function(c1x, c1y, c2x, c2y, x, y) {
+        var path = this._curPath;
+        var last = path.points[path.points.length - 1];
+        if (last.x === c1x && last.y === c1y && c2x === x && c2y === y) {
+          this.lineTo(x, y);
+          return;
+        }
+        Helper.tesselateBezier(this, last.x, last.y, c1x, c1y, c2x, c2y, x, y, 0, PointFlags.PT_CORNER);
+        this._commandx = x;
+        this._commandy = y;
+      };
+      SmoothTrailImpl.prototype.quadraticCurveTo = function(cx, cy, x, y) {
+        var x0 = this._commandx;
+        var y0 = this._commandy;
+        this.bezierCurveTo(x0 + 2 / 3 * (cx - x0), y0 + 2 / 3 * (cy - y0), x + 2 / 3 * (cx - x), y + 2 / 3 * (cy - y), x, y);
+      };
+      SmoothTrailImpl.prototype.arc = function(cx, cy, r, startAngle, endAngle, counterclockwise) {
+        Helper.arc(this, cx, cy, r, startAngle, endAngle, counterclockwise);
+      };
+      SmoothTrailImpl.prototype.ellipse = function(cx, cy, rx, ry) {
+        Helper.ellipse(this, cx, cy, rx, ry);
+        this._curPath.complex = false;
+      };
+      SmoothTrailImpl.prototype.circle = function(cx, cy, r) {
+        Helper.ellipse(this, cx, cy, r, r);
+        this._curPath.complex = false;
+      };
+      SmoothTrailImpl.prototype.rect = function(x, y, w, h) {
+        this.moveTo(x, y);
+        this.lineTo(x, y + h);
+        this.lineTo(x + w, y + h);
+        this.lineTo(x + w, y);
+        this.close();
+        this._curPath.complex = false;
+      };
+      SmoothTrailImpl.prototype.roundRect = function(x, y, w, h, r) {
+        Helper.roundRect(this, x, y, w, h, r);
+        this._curPath.complex = false;
+      };
+      SmoothTrailImpl.prototype.clear = function(clean) {
+        this._pathLength = 0;
+        this._pathOffset = 0;
+        this._pointsOffset = 0;
+        this._curPath = null;
+        if (clean) {
+          this._paths.length = 0;
+          this._points.length = 0;
+        }
+      };
+      SmoothTrailImpl.prototype.close = function() {
+        this._curPath.closed = true;
+      };
+      SmoothTrailImpl.prototype._addPath = function() {
+        var offset = this._pathLength;
+        var path = this._paths[offset];
+        if (path) path.reset(); else {
+          path = new Path();
+          this._paths.push(path);
+        }
+        this._pathLength++;
+        this._curPath = path;
+        return path;
+      };
+      SmoothTrailImpl.prototype._addPoint = function(x, y, flags) {
+        var path = this._curPath;
+        if (!path) return;
+        var points = this._points;
+        var pathPoints = path.points;
+        var offset = this._pointsOffset++;
+        var pt = points[offset];
+        if (pt) {
+          pt.x = x;
+          pt.y = y;
+        } else {
+          pt = new cc.Graphics.Point(x, y);
+          points.push(pt);
+        }
+        path.vertCount.length <= offset && path.vertCount.push(0);
+        pt.flags = flags;
+        pathPoints.push(pt);
+      };
+      return SmoothTrailImpl;
+    }();
+    exports.SmoothTrailImpl = SmoothTrailImpl;
+    cc._RF.pop();
+  }, {} ],
+  SmoothTrail: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "d1c3asrNRVN8p5aDE6bnoeS", "SmoothTrail");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    exports.SmoothTrail = void 0;
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var SmoothTrailImpl_1 = require("./SmoothTrailImpl");
+    var PointFlags = cc.Graphics.Types.PointFlags;
+    var SmoothTrail = function(_super) {
+      __extends(SmoothTrail, _super);
+      function SmoothTrail() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this.pnts = [];
+        _this._renderHead = 0;
+        _this._debug = false;
+        return _this;
+      }
+      SmoothTrail.prototype.onLoad = function() {
+        this._trailImpl = this._impl = new SmoothTrailImpl_1.SmoothTrailImpl(this);
+      };
+      SmoothTrail.prototype.StartPath = function(p) {
+        this.clear();
+        this.pnts.length = 0;
+        this.pnts.push(p);
+        this._renderHead = 0;
+        if (this._debug) this.moveTo(p.x, p.y); else {
+          var x = p.x, y = p.y;
+          var impl = this._trailImpl;
+          impl._addPath();
+          impl._addPoint(x, y, PointFlags.PT_CORNER);
+          impl._commandx = x;
+          impl._commandy = y;
+        }
+      };
+      SmoothTrail.prototype.AddPathPoint = function(p) {
+        var delta = p.sub(this.pnts[this.pnts.length - 1]);
+        var dist2 = delta.dot(delta);
+        if (dist2 <= 9) return;
+        this.pnts.push(p);
+        if (this._debug) this.lineTo(p.x, p.y); else {
+          var x = p.x, y = p.y;
+          var impl = this._trailImpl;
+          impl._addPoint(x, y, PointFlags.PT_CORNER);
+          impl._commandx = x;
+          impl._commandy = y;
+          this.RenderNext();
+        }
+      };
+      SmoothTrail.prototype.EndPath = function() {
+        if (this._debug) this.stroke(); else {
+          this.RenderNext();
+          var as = this._assembler;
+          as.CapEnd(this, this._renderHead);
+          this._renderHead = this.pnts.length;
+        }
+      };
+      SmoothTrail.prototype.RenderNext = function() {
+        this._assembler || this._resetAssembler();
+        if (this._renderHead >= this.pnts.length - 2) return;
+        var as = this._assembler;
+        while (this._renderHead < this.pnts.length - 2) {
+          0 === this._renderHead && as.CapStart(this, 0);
+          as._flattenPathsV2(this._trailImpl, this._renderHead, this.pnts.length - 2);
+          if (!as.HasSmoothCorner(this, this._renderHead)) {
+            var removeIndex = this._renderHead + 2;
+            this._trailImpl.erase(removeIndex);
+            this.pnts.splice(removeIndex, 1);
+            continue;
+          }
+          as.strokeV2(this, this._renderHead, this.pnts.length - 2);
+          this._renderHead = this.pnts.length - 2;
+        }
+      };
+      SmoothTrail = __decorate([ ccclass ], SmoothTrail);
+      return SmoothTrail;
+    }(cc.Graphics);
+    exports.SmoothTrail = SmoothTrail;
+    cc._RF.pop();
+  }, {
+    "./SmoothTrailImpl": "SmoothTrailImpl"
+  } ],
+  SplineTrailAssembler: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "3569cPG7i1JeZ5HaqfQ4gFP", "SplineTrailAssembler");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    exports.SplineTrailRendererAssembler = void 0;
+    var SplineTrailRenderer_1 = require("./SplineTrailRenderer");
+    var gfx = cc.gfx;
+    var vfmtSplineTrail = new gfx.VertexFormat([ {
+      name: "a_position",
+      type: gfx.ATTR_TYPE_FLOAT32,
+      num: 2
+    }, {
+      name: "a_width",
+      type: gfx.ATTR_TYPE_FLOAT32,
+      num: 1
+    }, {
+      name: "a_dist",
+      type: gfx.ATTR_TYPE_FLOAT32,
+      num: 1
+    }, {
+      name: gfx.ATTR_COLOR,
+      type: gfx.ATTR_TYPE_UINT8,
+      num: 4,
+      normalize: true
+    } ]);
+    var SplineTrailRendererAssembler = function(_super) {
+      __extends(SplineTrailRendererAssembler, _super);
+      function SplineTrailRendererAssembler() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this.useWorldPos = true;
+        _this._worldDatas = {};
+        _this._renderNode = null;
+        _this._floatsPerVert = 2;
+        _this._renderData = null;
+        _this._splineTrailComp = null;
+        _this._flexBuffer = null;
+        _this._tmpVec2 = cc.v2(0, 0);
+        _this._tmpVec3 = new cc.Vec3();
+        return _this;
+      }
+      SplineTrailRendererAssembler.prototype.init = function(comp) {
+        _super.prototype.init.call(this, comp);
+        this._splineTrailComp = comp;
+        this._worldDatas = {};
+        this._renderNode = null;
+        this._floatsPerVert = this.getVfmt()._bytes >> 2;
+        var data = this._renderData = new cc.RenderData();
+        data.init(this);
+        this.initData();
+      };
+      SplineTrailRendererAssembler.prototype.initData = function() {
+        var initQuadCount = 50;
+        var data = this._renderData;
+        data.createFlexData(0, 4 * initQuadCount, 6 * initQuadCount, this.getVfmt());
+        this._flexBuffer = data._flexBuffer;
+      };
+      SplineTrailRendererAssembler.prototype.updateRenderData = function(comp) {
+        if (comp._vertsDirty) {
+          var vertices = comp._vertices;
+          var vertexCount = vertices.length;
+          var indicesCount = vertexCount / 4 * 6;
+          var flexBuffer = this._flexBuffer;
+          flexBuffer.reserve(vertexCount, indicesCount);
+          flexBuffer.used(vertexCount, indicesCount);
+          this.updateVerts(comp);
+          this.initQuadIndices(flexBuffer.iData, indicesCount);
+          comp._vertsDirty = false;
+        }
+      };
+      SplineTrailRendererAssembler.prototype.initQuadIndices = function(indices, len) {
+        var count = len / 6;
+        for (var i = 0, idx = 0; i < count; i++) {
+          var vertextID = 4 * i;
+          indices[idx++] = vertextID;
+          indices[idx++] = vertextID + 1;
+          indices[idx++] = vertextID + 2;
+          indices[idx++] = vertextID + 1;
+          indices[idx++] = vertextID + 3;
+          indices[idx++] = vertextID + 2;
+        }
+      };
+      SplineTrailRendererAssembler.prototype.updateVerts = function(comp) {
+        var floatsPerVert = this._floatsPerVert;
+        var vertices = comp._vertices;
+        var sideDist = comp._sideDist;
+        var dist = comp._dist;
+        var vertexCount = vertices.length;
+        var vData = this._flexBuffer.vData;
+        var baseIndex = 0;
+        for (var i = 0, n = vertexCount; i < n; ++i) {
+          baseIndex = i * floatsPerVert;
+          vData[baseIndex++] = vertices.Get(i).x;
+          vData[baseIndex++] = vertices.Get(i).y;
+          vData[baseIndex++] = sideDist[i];
+          vData[baseIndex++] = dist[i];
+        }
+        this.updateWorldVerts(comp);
+      };
+      SplineTrailRendererAssembler.prototype.updateWorldVerts = function(comp) {
+        false;
+        this.useWorldPos || this.updateWorldVertsWebGL(comp);
+      };
+      SplineTrailRendererAssembler.prototype.updateWorldVertsWebGL = function(comp) {
+        var vData = this._flexBuffer.vData;
+        var vertexCount = this._flexBuffer.usedVertices;
+        var matrix = comp.node._worldMatrix;
+        var matrixm = matrix.m, a = matrixm[0], b = matrixm[1], c = matrixm[4], d = matrixm[5], tx = matrixm[12], ty = matrixm[13];
+        var justTranslate = 1 === a && 0 === b && 0 === c && 1 === d;
+        justTranslate = true;
+        var floatsPerVert = this._floatsPerVert;
+        if (justTranslate) {
+          var baseIndex = 0;
+          for (var i = 0, n = vertexCount; i < n; ++i) {
+            baseIndex = i * floatsPerVert;
+            vData[baseIndex] += tx;
+            vData[baseIndex + 1] += ty;
+            baseIndex += floatsPerVert;
+          }
+        }
+      };
+      SplineTrailRendererAssembler.prototype.updateWorldVertsNative = function(comp) {
+        var baseIndex = 0;
+        var vData = this._flexBuffer.vData;
+        var vertexCount = this._flexBuffer.usedVertices;
+        var floatsPerVert = this._floatsPerVert;
+        var tmpVec2 = this._tmpVec2;
+        tmpVec2.x = tmpVec2.y = 0;
+        comp.node.convertToWorldSpaceAR(tmpVec2, tmpVec2);
+        var tx = -tmpVec2.x;
+        var ty = -tmpVec2.y;
+        for (var i = 0, n = vertexCount; i < n; ++i) {
+          baseIndex = i * floatsPerVert;
+          vData[baseIndex] += tx;
+          vData[baseIndex + 1] += ty;
+          baseIndex += floatsPerVert;
+        }
+      };
+      SplineTrailRendererAssembler.prototype.updateColor = function(comp, color) {
+        var k = 0;
+      };
+      SplineTrailRendererAssembler.prototype.updateUVs = function(comp) {
+        var k = 0;
+      };
+      SplineTrailRendererAssembler.prototype.getVfmt = function() {
+        return vfmtSplineTrail;
+      };
+      SplineTrailRendererAssembler.prototype.getBuffer = function() {
+        return cc.renderer._handle.getBuffer("mesh", this.getVfmt());
+      };
+      SplineTrailRendererAssembler.prototype.setRenderNode = function(node) {
+        this._renderNode = node;
+      };
+      SplineTrailRendererAssembler.prototype.fillBuffers = function(comp, renderer) {
+        var flexBuffer = this._flexBuffer;
+        if (!(null === flexBuffer || void 0 === flexBuffer ? void 0 : flexBuffer.usedVertices)) return;
+        var renderData = this._renderData;
+        var vData = renderData.vDatas[0];
+        var iData = renderData.iDatas[0];
+        var buffer = this.getBuffer();
+        var offsetInfo = buffer.request(flexBuffer.usedVertices, flexBuffer.usedIndices);
+        var vertexOffset = offsetInfo.byteOffset >> 2, vbuf = buffer._vData;
+        vData.length + vertexOffset > vbuf.length ? vbuf.set(vData.subarray(0, vbuf.length - vertexOffset), vertexOffset) : vbuf.set(vData, vertexOffset);
+        var ibuf = buffer._iData, indiceOffset = offsetInfo.indiceOffset, vertexId = offsetInfo.vertexOffset;
+        for (var i = 0, l = iData.length; i < l; i++) ibuf[indiceOffset++] = vertexId + iData[i];
+      };
+      SplineTrailRendererAssembler.prototype._updateWorldVertices = function(dataIndex, vertexCount, local, vtxFormat, wolrdMatrix) {
+        var world = this._worldDatas[dataIndex];
+        world || (world = this._worldDatas[dataIndex] = new Float32Array(local.length));
+        var floatCount = vtxFormat._bytes / 4;
+        var elements = vtxFormat._elements;
+        var tmpVec3 = this._tmpVec3;
+        for (var i = 0, n = elements.length; i < n; i++) {
+          var element = elements[i];
+          var attrOffset = element.offset / 4;
+          if (element.name === gfx.ATTR_POSITION || element.name === gfx.ATTR_NORMAL) {
+            var transformMat4 = element.name === gfx.ATTR_NORMAL ? cc.Vec3.transformMat4Normal : cc.Vec3.transformMat4;
+            for (var j = 0; j < vertexCount; j++) {
+              var offset = j * floatCount + attrOffset;
+              tmpVec3.x = local[offset];
+              tmpVec3.y = local[offset + 1];
+              tmpVec3.z = local[offset + 2];
+              transformMat4(tmpVec3, tmpVec3, wolrdMatrix);
+              world[offset] = tmpVec3.x;
+              world[offset + 1] = tmpVec3.y;
+              world[offset + 2] = tmpVec3.z;
+            }
+          }
+        }
+      };
+      SplineTrailRendererAssembler.prototype._drawDebugDatas = function(comp, renderer, name) {
+        var debugDatas = comp._debugDatas[name];
+        if (!debugDatas) return;
+        for (var i = 0; i < debugDatas.length; i++) {
+          var debugData = debugDatas[i];
+          if (!debugData) continue;
+          var material = debugData.material;
+          renderer.material = material;
+          renderer._flushIA(debugData.ia);
+        }
+      };
+      return SplineTrailRendererAssembler;
+    }(cc.Assembler);
+    exports.SplineTrailRendererAssembler = SplineTrailRendererAssembler;
+    cc.Assembler.register(SplineTrailRenderer_1.SplineTrailRenderer, SplineTrailRendererAssembler);
+    cc._RF.pop();
+  }, {
+    "./SplineTrailRenderer": "SplineTrailRenderer"
+  } ],
+  SplineTrailRenderer: [ function(require, module, exports) {
+    "use strict";
+    cc._RF.push(module, "16d86NyEWlPGqms7186u7Sr", "SplineTrailRenderer");
+    "use strict";
+    var __extends = this && this.__extends || function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function(d, b) {
+          d.__proto__ = b;
+        } || function(d, b) {
+          for (var p in b) b.hasOwnProperty(p) && (d[p] = b[p]);
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = null === b ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+    var __decorate = this && this.__decorate || function(decorators, target, key, desc) {
+      var c = arguments.length, r = c < 3 ? target : null === desc ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+      if ("object" === typeof Reflect && "function" === typeof Reflect.decorate) r = Reflect.decorate(decorators, target, key, desc); else for (var i = decorators.length - 1; i >= 0; i--) (d = decorators[i]) && (r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r);
+      return c > 3 && r && Object.defineProperty(target, key, r), r;
+    };
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+    exports.SplineTrailRenderer = exports.PositionType = exports.FadeType = exports.CornerType = exports.ResetableVec2 = void 0;
+    var _a = cc._decorator, ccclass = _a.ccclass, property = _a.property;
+    var CacheArray_1 = require("./CacheArray");
+    var CatmullRomSpline_1 = require("./CatmullRomSpline");
+    var ResetableVec2 = function(_super) {
+      __extends(ResetableVec2, _super);
+      function ResetableVec2() {
+        return null !== _super && _super.apply(this, arguments) || this;
+      }
+      ResetableVec2.prototype.Reset = function() {
+        this.x = this.y = 0;
+      };
+      return ResetableVec2;
+    }(cc.Vec2);
+    exports.ResetableVec2 = ResetableVec2;
+    var CornerType;
+    (function(CornerType) {
+      CornerType[CornerType["Continuous"] = 0] = "Continuous";
+      CornerType[CornerType["Fragmented"] = 1] = "Fragmented";
+    })(CornerType = exports.CornerType || (exports.CornerType = {}));
+    var FadeType;
+    (function(FadeType) {
+      FadeType[FadeType["None"] = 0] = "None";
+      FadeType[FadeType["MeshShrinking"] = 1] = "MeshShrinking";
+      FadeType[FadeType["Alpha"] = 2] = "Alpha";
+      FadeType[FadeType["Both"] = 3] = "Both";
+    })(FadeType = exports.FadeType || (exports.FadeType = {}));
+    var PositionType;
+    (function(PositionType) {
+      PositionType[PositionType["World"] = 0] = "World";
+      PositionType[PositionType["Local"] = 1] = "Local";
+    })(PositionType = exports.PositionType || (exports.PositionType = {}));
+    var SplineTrailRenderer = function(_super) {
+      __extends(SplineTrailRenderer, _super);
+      function SplineTrailRenderer() {
+        var _this = null !== _super && _super.apply(this, arguments) || this;
+        _this._positionType = PositionType.World;
+        _this.cornerType = CornerType.Continuous;
+        _this._splineParam = CatmullRomSpline_1.SplineParameterization.Centripetal;
+        _this.maxLength = 500;
+        _this.segmentLength = 30;
+        _this.segmentWidth = 40;
+        _this.smoothDistance = 60;
+        _this.selfEmit = false;
+        _this.showDuration = -1;
+        _this.nbSegmentToParametrize = 3;
+        _this.fadeType = FadeType.None;
+        _this.fadeLengthBegin = 5;
+        _this.fadeLengthEnd = 5;
+        _this._vertices = new CacheArray_1.CacheArray();
+        _this._sideDist = [];
+        _this._dist = [];
+        _this._fixedPointIndex = 0;
+        _this._distTolerance = 4;
+        _this._tmpVec2 = new cc.Vec2();
+        _this._halfWidthVec2 = new cc.Vec2();
+        _this._prePosition = new cc.Vec2();
+        _this._preTangent = new cc.Vec2();
+        _this._preBinormal = new cc.Vec2();
+        _this._curPosition = new cc.Vec2();
+        _this._curTangent = new cc.Vec2();
+        _this._curBinormal = new cc.Vec2();
+        return _this;
+      }
+      Object.defineProperty(SplineTrailRenderer.prototype, "positionType", {
+        get: function() {
+          return this._positionType;
+        },
+        set: function(value) {
+          this._positionType = value;
+          this.FlushMatProperties();
+        },
+        enumerable: false,
+        configurable: true
+      });
+      Object.defineProperty(SplineTrailRenderer.prototype, "splineParam", {
+        get: function() {
+          return this._splineParam;
+        },
+        set: function(value) {
+          this._splineParam = value;
+          true;
+          this.spline.splineParam = value;
+        },
+        enumerable: false,
+        configurable: true
+      });
+      SplineTrailRenderer.prototype.onLoad = function() {
+        this.spline = new CatmullRomSpline_1.CatmullRomSpline();
+        var gfx = cc.gfx;
+        var vfmtSplineTrail = new gfx.VertexFormat([ {
+          name: "a_position",
+          type: gfx.ATTR_TYPE_FLOAT32,
+          num: 2
+        }, {
+          name: "a_width",
+          type: gfx.ATTR_TYPE_FLOAT32,
+          num: 1
+        }, {
+          name: "a_dist",
+          type: gfx.ATTR_TYPE_FLOAT32,
+          num: 1
+        }, {
+          name: gfx.ATTR_COLOR,
+          type: gfx.ATTR_TYPE_UINT8,
+          num: 4,
+          normalize: true
+        } ]);
+        vfmtSplineTrail.name = "vfmtSplineTrail";
+        this.FlushMatProperties();
+        this.spline.splineParam = this._splineParam;
+      };
+      SplineTrailRenderer.prototype.start = function() {
+        this.selfEmit && this.StartPath(this.FromLocalPos(cc.Vec2.ZERO));
+      };
+      SplineTrailRenderer.prototype.update = function() {
+        if (this.selfEmit && true) {
+          var pos = this.FromLocalPos(cc.Vec2.ZERO);
+          this.AddPoint(pos);
+        }
+      };
+      SplineTrailRenderer.prototype.FromWorldPos = function(worldPos) {
+        if (this._positionType === PositionType.World) return worldPos;
+        return this.node.convertToNodeSpaceAR(worldPos);
+      };
+      SplineTrailRenderer.prototype.FromLocalPos = function(localPos) {
+        if (this._positionType === PositionType.World) return this.node.convertToWorldSpaceAR(localPos);
+        return localPos;
+      };
+      SplineTrailRenderer.prototype.FlushMatProperties = function() {
+        var renderer = this;
+        var ass = renderer._assembler;
+        var useWolrdPos = this._positionType === PositionType.World;
+        ass.useWorldPos = useWolrdPos;
+        var mat = renderer.getMaterial(0);
+        void 0 !== mat.getDefine("USE_WORLD_POS") && mat.define("USE_WORLD_POS", useWolrdPos);
+      };
+      SplineTrailRenderer.prototype.StartPath = function(point) {
+        this._lastStartingQuad = 0;
+        this._quadOffset = 0;
+        this._vertices.Reset();
+        this.spline.Clear();
+        var emitTime = cc.director.getTotalTime();
+        this._fixedPointIndex = 0;
+        var knots = this.spline.knots;
+        knots.push(new CatmullRomSpline_1.Knot(point, emitTime));
+      };
+      SplineTrailRenderer.prototype.Clear = function() {
+        this.StartPath(this.node.convertToWorldSpaceAR(cc.Vec2.ZERO));
+      };
+      SplineTrailRenderer.prototype.ImitateTrail = function(trail) {
+        this.smoothDistance = trail.smoothDistance;
+        this.segmentWidth = trail.segmentWidth;
+        this.segmentLength = trail.segmentLength;
+        this.cornerType = trail.cornerType;
+        this.fadeType = trail.fadeType;
+        this.fadeLengthBegin = trail.fadeLengthBegin;
+        this.fadeLengthEnd = trail.fadeLengthEnd;
+        this.maxLength = trail.maxLength;
+        this.splineParam = trail.splineParam;
+      };
+      SplineTrailRenderer.prototype.AddPoint = function(point) {
+        var knots = this.spline.knots;
+        if (0 === knots.length) {
+          knots.push(new CatmullRomSpline_1.Knot(point));
+          this._fixedPointIndex = 0;
+          return;
+        }
+        if (1 === knots.length) {
+          var dist = cc.Vec2.distance(knots[0].position, point);
+          if (dist <= this._distTolerance) return;
+          var P0 = knots[0].position.mul(2).sub(point);
+          var P3 = point.mul(2).sub(knots[0].position);
+          knots.splice(0, 0, new CatmullRomSpline_1.Knot(P0));
+          knots.push(new CatmullRomSpline_1.Knot(point));
+          knots.push(new CatmullRomSpline_1.Knot(P3));
+          dist > this.smoothDistance ? this._fixedPointIndex = 2 : this._fixedPointIndex = 1;
+        } else {
+          var fixedPointIndex = this._fixedPointIndex;
+          var P0 = knots[fixedPointIndex - 1].position;
+          var P1 = knots[fixedPointIndex].position;
+          var dist = cc.Vec2.distance(P1, point);
+          if (dist <= this._distTolerance) return;
+          var P2 = knots[fixedPointIndex + 1].position;
+          P2.set(point);
+          knots.length <= fixedPointIndex + 2 && knots.push(new CatmullRomSpline_1.Knot(cc.v2(0, 0)));
+          var P3 = knots[fixedPointIndex + 2].position;
+          P3.set(P2.mul(2).sub(P1));
+          cc.Vec2.distance(P1, P2) > this.smoothDistance && cc.Vec2.distance(P0, P2) > this.smoothDistance && ++this._fixedPointIndex;
+        }
+        this.RenderMesh();
+      };
+      SplineTrailRenderer.prototype.RenderMesh = function() {
+        var spline = this.spline;
+        if (spline.knots.length < 4) return;
+        var segmentLength = this.segmentLength;
+        var segmentWidth = this.segmentWidth;
+        0 === this.nbSegmentToParametrize ? spline.Parametrize(0, spline.NbSegments - 1) : spline.Parametrize(spline.NbSegments - this.nbSegmentToParametrize, spline.NbSegments);
+        var length = Math.max(spline.Length() - .1, 0);
+        var nbQuad = Math.floor(1 / segmentLength * length) + 1 - this._quadOffset;
+        var startingQuad = this._lastStartingQuad;
+        var lastDistance = startingQuad * segmentLength + this._quadOffset * segmentLength;
+        var marker = new CatmullRomSpline_1.Marker();
+        spline.PlaceMarker(marker, lastDistance);
+        var prePosition = spline.GetPosition(marker, this._prePosition);
+        var preTangent = spline.GetTangent(marker, this._preTangent);
+        var preBinormal = CatmullRomSpline_1.CatmullRomSpline.ComputeBinormal(preTangent, null, this._preBinormal);
+        var drawingEnd = nbQuad - 1;
+        var vertexPerQuad = 4;
+        this._vertices.Resize((drawingEnd - startingQuad) * vertexPerQuad, ResetableVec2);
+        this._sideDist.length = this._vertices.length;
+        this._dist.length = this._vertices.length;
+        for (var i = startingQuad; i < drawingEnd; i++) {
+          var distance = lastDistance + segmentLength;
+          var firstVertexIndex = (i - startingQuad) * vertexPerQuad;
+          spline.MoveMarker(marker, distance);
+          var position = spline.GetPosition(marker, this._curPosition);
+          var tangent = spline.GetTangent(marker, this._curTangent);
+          var binormal = CatmullRomSpline_1.CatmullRomSpline.ComputeBinormal(tangent, null, this._curBinormal);
+          var h = this.FadeMultiplier(lastDistance, length);
+          var h2 = this.FadeMultiplier(distance, length);
+          var rh = h * segmentWidth, rh2 = h2 * segmentWidth;
+          if (this.fadeType === FadeType.Alpha || this.fadeType === FadeType.None) {
+            rh = h > 0 ? segmentWidth : 0;
+            rh2 = h2 > 0 ? segmentWidth : 0;
+          }
+          if (this.cornerType == CornerType.Continuous) {
+            var tmpVec2 = this._tmpVec2;
+            var halfWidth = preBinormal.mul(.5 * rh, this._halfWidthVec2);
+            this._vertices.Get(firstVertexIndex).set(prePosition.add(halfWidth, tmpVec2));
+            this._vertices.Get(firstVertexIndex + 1).set(prePosition.add(halfWidth.neg(tmpVec2), tmpVec2));
+            halfWidth = binormal.mul(.5 * rh2, halfWidth);
+            this._vertices.Get(firstVertexIndex + 2).set(position.add(halfWidth, tmpVec2));
+            this._vertices.Get(firstVertexIndex + 3).set(position.add(halfWidth.neg(tmpVec2), tmpVec2));
+            this._sideDist[firstVertexIndex] = 0;
+            this._sideDist[firstVertexIndex + 1] = segmentWidth;
+            this._sideDist[firstVertexIndex + 2] = 0;
+            this._sideDist[firstVertexIndex + 3] = segmentWidth;
+            this._dist[firstVertexIndex] = lastDistance;
+            this._dist[firstVertexIndex + 1] = lastDistance;
+            this._dist[firstVertexIndex + 2] = distance;
+            this._dist[firstVertexIndex + 3] = distance;
+          } else {
+            var tmpVec2 = this._tmpVec2;
+            prePosition.addSelf(preTangent.mul(-.5 * segmentLength, tmpVec2));
+            var halfWidth = preBinormal.mul(.5 * rh, this._halfWidthVec2);
+            this._vertices.Get(firstVertexIndex).set(prePosition.add(halfWidth, tmpVec2));
+            this._vertices.Get(firstVertexIndex + 1).set(prePosition.add(halfWidth.neg(tmpVec2), tmpVec2));
+            prePosition.addSelf(preTangent.mul(segmentLength, tmpVec2));
+            this._vertices.Get(firstVertexIndex + 2).set(prePosition.add(halfWidth, tmpVec2));
+            this._vertices.Get(firstVertexIndex + 3).set(prePosition.add(halfWidth.neg(tmpVec2), tmpVec2));
+            this._sideDist[firstVertexIndex] = 0;
+            this._sideDist[firstVertexIndex + 1] = segmentWidth;
+            this._sideDist[firstVertexIndex + 2] = 0;
+            this._sideDist[firstVertexIndex + 3] = segmentWidth;
+            this._dist[firstVertexIndex] = lastDistance;
+            this._dist[firstVertexIndex + 1] = lastDistance;
+            this._dist[firstVertexIndex + 2] = distance;
+            this._dist[firstVertexIndex + 3] = distance;
+          }
+          prePosition.set(position);
+          preTangent.set(tangent);
+          preBinormal.set(binormal);
+          lastDistance = distance;
+        }
+        this._lastStartingQuad = Math.max(0, nbQuad - (Math.floor(this.maxLength / segmentLength) + 5));
+        var renderer = this;
+        var mat = renderer.getMaterial(0);
+        void 0 !== mat.getProperty("size", 0) && mat.setProperty("size", [ segmentLength, segmentWidth, 1 / segmentLength, 1 / segmentWidth ]);
+        this.setVertsDirty();
+      };
+      SplineTrailRenderer.prototype.FadeMultiplier = function(distance, length) {
+        return 1;
+      };
+      __decorate([ property({
+        type: cc.Enum(PositionType)
+      }) ], SplineTrailRenderer.prototype, "_positionType", void 0);
+      __decorate([ property({
+        type: cc.Enum(PositionType),
+        displayName: "\u5750\u6807\u7c7b\u578b",
+        tooltip: "World: \u4e16\u754c\u5750\u6807\uff0c\u5982\u679c\u9700\u8981\u6574\u4f53\u79fb\u52a8\u8f68\u8ff9\u5219\u9700\u8981\u79fb\u52a8\u6444\u50cf\u673a; Local: \u672c\u5730\u5750\u6807\uff0c\u8f68\u8ff9\u6574\u4f53\u8ddf\u968f\u8282\u70b9\u79fb\u52a8"
+      }) ], SplineTrailRenderer.prototype, "positionType", null);
+      __decorate([ property({
+        type: cc.Enum(CornerType),
+        displayName: "\u6298\u89d2\u7c7b\u578b",
+        tooltip: "\u8fde\u7eed\u6a21\u5f0f\u4e0b\u66f4\u5e73\u6ed1\u4f46\u662f\u5c40\u90e8\u53ef\u80fd\u51fa\u73b0\u5f62\u53d8; \u5206\u6bb5\u6a21\u5f0f\u4e0b\u5404\u5206\u6bb5\u72ec\u7acb\u7ed8\u5236\uff0c\u9002\u7528\u4e8e\u975e\u8fde\u7eed\u7279\u6548"
+      }) ], SplineTrailRenderer.prototype, "cornerType", void 0);
+      __decorate([ property({
+        type: cc.Enum(CatmullRomSpline_1.SplineParameterization)
+      }) ], SplineTrailRenderer.prototype, "_splineParam", void 0);
+      __decorate([ property({
+        type: cc.Enum(CatmullRomSpline_1.SplineParameterization),
+        displayName: "\u53c2\u6570\u5316\u65b9\u5f0f",
+        tooltip: "\u4e3b\u8981\u533a\u522b\u662f\u66f2\u7ebf\u6298\u89d2\u5904\u7406\uff0cCentripetal\u76f8\u5bf9\u6765\u8bf4\u66f4\u52a0\u81ea\u7136\uff0c\u8ba1\u7b97\u91cf\u5927\u4e00\u70b9"
+      }) ], SplineTrailRenderer.prototype, "splineParam", null);
+      __decorate([ property({
+        type: cc.Float,
+        displayName: "\u6700\u5927\u957f\u5ea6(px)",
+        tooltip: "\u8d85\u51fa\u8be5\u957f\u5ea6\u540e\u5c3e\u90e8\u4f1a\u88ab\u81ea\u52a8\u88c1\u526a"
+      }) ], SplineTrailRenderer.prototype, "maxLength", void 0);
+      __decorate([ property({
+        type: cc.Float,
+        displayName: "\u7cbe\u5ea6(px)",
+        tooltip: "\u6bcf\u4e2aQuad\u8868\u793a\u7684\u7ebf\u6bb5\u957f\u5ea6\uff0c\u503c\u8d8a\u5c0f\u66f2\u7ebf\u8d8a\u5e73\u6ed1"
+      }) ], SplineTrailRenderer.prototype, "segmentLength", void 0);
+      __decorate([ property({
+        type: cc.Float,
+        displayName: "\u66f2\u7ebf\u5bbd\u5ea6(px)",
+        tooltip: "\u6298\u89d2\u5904\u7684\u5bbd\u5ea6\u4f1a\u7565\u7a84\uff0c\u5939\u89d2\u8d8a\u5c0f\u5bbd\u5ea6\u8d8a\u7a84"
+      }) ], SplineTrailRenderer.prototype, "segmentWidth", void 0);
+      __decorate([ property({
+        type: cc.Float,
+        displayName: "\u5934\u90e8\u5e73\u6ed1\u8ddd\u79bb(px)",
+        tooltip: "\u53d6\u503c\u8d8a\u9ad8\u5934\u90e8\u8d8a\u5e73\u6ed1\uff0c\u4f46\u662f\u5934\u90e8\u53ef\u80fd\u51fa\u73b0\u4f4d\u79fb\u3002\u9ed8\u8ba4\u53d6\u503c: \u7cbe\u5ea6*2"
+      }) ], SplineTrailRenderer.prototype, "smoothDistance", void 0);
+      __decorate([ property({
+        displayName: "\u81ea\u52a8\u751f\u6210\u8f68\u8ff9",
+        tooltip: "\u7269\u4f53\u79fb\u52a8\u65f6\u81ea\u52a8\u8c03\u7528AddPoint()\u751f\u6210\u8f68\u8ff9"
+      }) ], SplineTrailRenderer.prototype, "selfEmit", void 0);
+      __decorate([ property({
+        type: cc.Float,
+        displayName: "\u663e\u793a\u65f6\u95f4(s)",
+        tooltip: "\u5c55\u793aX\u79d2\u540e\u81ea\u52a8\u6d88\u5931\u3002<=0\u8868\u793a\u4e0d\u6d88\u5931"
+      }) ], SplineTrailRenderer.prototype, "showDuration", void 0);
+      SplineTrailRenderer = __decorate([ ccclass ], SplineTrailRenderer);
+      return SplineTrailRenderer;
+    }(cc.RenderComponent);
+    exports.SplineTrailRenderer = SplineTrailRenderer;
+    cc._RF.pop();
+  }, {
+    "./CacheArray": "CacheArray",
+    "./CatmullRomSpline": "CatmullRomSpline"
+  } ],
   SpriteMaskedAvatarAssembler: [ function(require, module, exports) {
     "use strict";
     cc._RF.push(module, "da46czoLEBHc711TNBTITkZ", "SpriteMaskedAvatarAssembler");
@@ -4400,4 +6623,4 @@ window.__require = function e(t, n, r) {
   }, {
     "./SpriteMaskedAvatarAssembler": "SpriteMaskedAvatarAssembler"
   } ]
-}, {}, [ "SceneTestGraphics", "SceneSpriteMaskedAvatars", "AvatarAssembler", "AvatarSprite", "EqualScalingAssembler", "EqualScalingSprite", "SpriteMaskedAvatarAssembler", "SpriteMaskedAvatarSprite", "CAParser", "SceneCellularAutomata", "MovingBGAssembler", "MovingBGSprite", "SceneDrawingBoard", "GraphicsShowMesh", "SceneGraphics", "LayeredBatchingAssembler", "LayeredBatchingRootRenderer", "SceneLayeredBatchingScrollView", "SceneMetaBalls", "MetaBallsAssembler", "MetaBallsRenderer", "SceneParticlesBatching", "SceneSDFFont", "EDT", "EDTAA3", "SceneSDF", "FFTTextureGenerator2", "MusicVisualizer", "MusicVisualizerH5", "SceneVisualizeMusic", "NavigatorButton", "SimpleDraggable", "SceneLoad", "SceneTest", "SceneWelcome", "GTAssembler2D", "GTAutoFitSpriteAssembler2D", "GTSimpleSpriteAssembler2D" ]);
+}, {}, [ "SceneTestGraphics", "SceneSpriteMaskedAvatars", "AvatarAssembler", "AvatarSprite", "EqualScalingAssembler", "EqualScalingSprite", "SpriteMaskedAvatarAssembler", "SpriteMaskedAvatarSprite", "CAParser", "SceneCellularAutomata", "MovingBGAssembler", "MovingBGSprite", "SceneDrawingBoard", "SceneGraphicsDrawingBoard", "CacheArray", "CatmullRomSpline", "SplineTrailAssembler", "SplineTrailRenderer", "GraphicsShowMesh", "SceneGraphics", "SmoothTrail", "SmoothTrailAssembler", "SmoothTrailImpl", "LayeredBatchingAssembler", "LayeredBatchingRootRenderer", "SceneLayeredBatchingScrollView", "SceneMetaBalls", "MetaBallsAssembler", "MetaBallsRenderer", "SceneParticlesBatching", "SceneSDFFont", "SceneSDFPhysics", "EDT", "EDTAA3", "SceneSDF", "FFTTextureGenerator2", "MusicVisualizer", "MusicVisualizerH5", "SceneVisualizeMusic", "NavigatorButton", "SimpleDraggable", "SceneLoad", "SceneTest", "SceneWelcome", "GTAssembler2D", "GTAutoFitSpriteAssembler2D", "GTSimpleSpriteAssembler2D" ]);

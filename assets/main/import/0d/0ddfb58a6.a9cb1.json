@@ -1,0 +1,275 @@
+[
+  [
+    {
+      "__type__": "cc.Prefab",
+      "_name": "SplineDashPath",
+      "data": {
+        "__id__": 1
+      }
+    },
+    {
+      "__type__": "cc.Node",
+      "_name": "SplineDashPath",
+      "_components": [
+        {
+          "__type__": "16d86NyEWlPGqms7186u7Sr",
+          "node": {
+            "__id__": 1
+          },
+          "_materials": [
+            {
+              "__uuid__": "d4ABJt3xNCoZ90WebT/EwE"
+            }
+          ],
+          "segmentLength": 20
+        }
+      ],
+      "_prefab": {
+        "__type__": "cc.PrefabInfo",
+        "root": {
+          "__id__": 1
+        },
+        "asset": {
+          "__uuid__": "5ctOTafm1HxZUJBH0kjzMC"
+        },
+        "fileId": "d46goswmpBU4sVq2usABq5"
+      },
+      "_contentSize": {
+        "__type__": "cc.Size",
+        "width": 100,
+        "height": 100
+      },
+      "_trs": {
+        "__type__": "TypedArray",
+        "ctor": "Float64Array",
+        "array": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    }
+  ],
+  {
+    "__type__": "cc.EffectAsset",
+    "_name": "SplineTrail",
+    "techniques": [
+      {
+        "passes": [
+          {
+            "blendState": {
+              "targets": [
+                {
+                  "blend": true
+                }
+              ]
+            },
+            "rasterizerState": {
+              "cullMode": 0
+            },
+            "properties": {
+              "texture": {
+                "value": "white",
+                "inspector": {
+                  "displayName": "贴图"
+                },
+                "type": 29
+              },
+              "size": {
+                "value": [
+                  15,
+                  20,
+                  0.666667,
+                  0.05
+                ],
+                "inspector": {
+                  "displayName": "片段大小",
+                  "tooltip": "(单位px)长、宽、1/长、1/宽"
+                },
+                "type": 16
+              },
+              "uv_shift": {
+                "value": [
+                  0,
+                  0
+                ],
+                "inspector": {
+                  "displayName": "UV时间偏移",
+                  "tooltip": "每秒偏移量"
+                },
+                "type": 14
+              }
+            },
+            "program": "SplineTrail|vs|fs"
+          }
+        ]
+      }
+    ],
+    "shaders": [
+      {
+        "hash": 2615969623,
+        "glsl3": {
+          "vert": "\n  precision highp float;\nuniform CCGlobal {\n  mat4 cc_matView;\n  mat4 cc_matViewInv;\n  mat4 cc_matProj;\n  mat4 cc_matProjInv;\n  mat4 cc_matViewProj;\n  mat4 cc_matViewProjInv;\n  vec4 cc_cameraPos;\n  vec4 cc_time;\n  mediump vec4 cc_screenSize;\n  mediump vec4 cc_screenScale;\n};\nuniform CCLocal {\n  mat4 cc_matWorld;\n  mat4 cc_matWorldIT;\n};\n  in vec3 a_position;\n  in vec4 a_color;\n  out vec4 v_color;\n  in float a_width;\n  out float v_width;\n  in float a_dist;\n  out float v_dist;\n  void main () {\n    vec4 pos = vec4(a_position, 1);\n#if USE_WORLD_POS\n    pos = cc_matViewProj * pos;\n#else\n    pos = cc_matViewProj * cc_matWorld * pos;\n#endif\n    v_width = a_width;\n    v_dist = a_dist;\n    v_color = a_color;\n    gl_Position = pos;\n  }",
+          "frag": "\n  #if CC_SUPPORT_standard_derivatives\n    #extension GL_OES_standard_derivatives : enable\n  #endif\n  precision highp float;\nuniform CCGlobal {\n  mat4 cc_matView;\n  mat4 cc_matViewInv;\n  mat4 cc_matProj;\n  mat4 cc_matProjInv;\n  mat4 cc_matViewProj;\n  mat4 cc_matViewProjInv;\n  vec4 cc_cameraPos;\n  vec4 cc_time;\n  mediump vec4 cc_screenSize;\n  mediump vec4 cc_screenScale;\n};\n  in vec4 v_color;\n  in float v_width;\n  in float v_dist;\n  uniform sampler2D texture;\n  uniform UARGS {\n    vec4 size;\n    vec4 runtime_color;\n    vec2 uv_shift;\n  };\n  void main () {\n#if USE_TEXTURE\n    vec2 uv = fract(vec2(v_dist, v_width) * size.zw);\n  #if UV_CROSS_SEGMENT\n    uv.x = fract(v_dist / size.y);\n  #endif\n  #if UV_SHIFT_BY_TIME\n    uv = fract(uv_shift * -cc_time.x + uv);\n  #endif\n    float fadeDist = 200.;\n    float alpha = clamp(v_dist / fadeDist, 0.01, 1.);\n    float scale_inv = 1./alpha;\n    uv.y = uv.y * scale_inv + (1.0 - scale_inv) * 0.5;\n    vec4 color = texture2D(texture, uv);\n    color.a *= alpha;\n#else\n    vec4 color = vec4(1., 0., 1., 1.);\n#endif\n    gl_FragColor = color;\n  }"
+        },
+        "glsl1": {
+          "vert": "\n  precision highp float;\nuniform mat4 cc_matViewProj;\nuniform mat4 cc_matWorld;\n  attribute vec3 a_position;\n  attribute vec4 a_color;\n  varying vec4 v_color;\n  attribute float a_width;\n  varying float v_width;\n  attribute float a_dist;\n  varying float v_dist;\n  void main () {\n    vec4 pos = vec4(a_position, 1);\n#if USE_WORLD_POS\n    pos = cc_matViewProj * pos;\n#else\n    pos = cc_matViewProj * cc_matWorld * pos;\n#endif\n    v_width = a_width;\n    v_dist = a_dist;\n    v_color = a_color;\n    gl_Position = pos;\n  }",
+          "frag": "\n  #if CC_SUPPORT_standard_derivatives\n    #extension GL_OES_standard_derivatives : enable\n  #endif\n  precision highp float;\nuniform vec4 cc_time;\n  varying vec4 v_color;\n  varying float v_width;\n  varying float v_dist;\n  uniform sampler2D texture;\n  uniform vec4 size;\nuniform vec2 uv_shift;\n  void main () {\n#if USE_TEXTURE\n    vec2 uv = fract(vec2(v_dist, v_width) * size.zw);\n  #if UV_CROSS_SEGMENT\n    uv.x = fract(v_dist / size.y);\n  #endif\n  #if UV_SHIFT_BY_TIME\n    uv = fract(uv_shift * -cc_time.x + uv);\n  #endif\n    float fadeDist = 200.;\n    float alpha = clamp(v_dist / fadeDist, 0.01, 1.);\n    float scale_inv = 1./alpha;\n    uv.y = uv.y * scale_inv + (1.0 - scale_inv) * 0.5;\n    vec4 color = texture2D(texture, uv);\n    color.a *= alpha;\n#else\n    vec4 color = vec4(1., 0., 1., 1.);\n#endif\n    gl_FragColor = color;\n  }"
+        },
+        "builtins": {
+          "globals": {
+            "blocks": [
+              {
+                "name": "CCGlobal",
+                "defines": []
+              }
+            ],
+            "samplers": []
+          },
+          "locals": {
+            "blocks": [
+              {
+                "name": "CCLocal",
+                "defines": []
+              }
+            ],
+            "samplers": []
+          }
+        },
+        "defines": [
+          {
+            "name": "USE_WORLD_POS",
+            "type": "boolean",
+            "defines": []
+          },
+          {
+            "name": "CC_SUPPORT_standard_derivatives",
+            "type": "boolean",
+            "defines": []
+          },
+          {
+            "name": "USE_TEXTURE",
+            "type": "boolean",
+            "defines": []
+          },
+          {
+            "name": "UV_CROSS_SEGMENT",
+            "type": "boolean",
+            "defines": [
+              "USE_TEXTURE"
+            ]
+          },
+          {
+            "name": "UV_SHIFT_BY_TIME",
+            "type": "boolean",
+            "defines": [
+              "USE_TEXTURE"
+            ]
+          }
+        ],
+        "blocks": [
+          {
+            "name": "UARGS",
+            "members": [
+              {
+                "name": "size",
+                "type": 16,
+                "count": 1
+              },
+              {
+                "name": "runtime_color",
+                "type": 16,
+                "count": 1
+              },
+              {
+                "name": "uv_shift",
+                "type": 14,
+                "count": 1
+              }
+            ],
+            "defines": [],
+            "binding": 0
+          }
+        ],
+        "samplers": [
+          {
+            "name": "texture",
+            "type": 29,
+            "count": 1,
+            "defines": [],
+            "binding": 30
+          }
+        ],
+        "record": null,
+        "name": "SplineTrail|vs|fs"
+      }
+    ]
+  },
+  {
+    "__type__": "cc.Material",
+    "_name": "SplineDashPath",
+    "_effectAsset": {
+      "__uuid__": "82sWlBfilJN5twN9UxtelE"
+    },
+    "_techniqueData": {
+      "0": {
+        "props": {
+          "size": {
+            "__type__": "cc.Vec4",
+            "x": 15,
+            "y": 20,
+            "z": 0.75,
+            "w": 1.33333
+          },
+          "uv_shift": {
+            "__type__": "cc.Vec2",
+            "x": 0.5
+          },
+          "texture": {
+            "__uuid__": "1aq1I+JJdHTqFgV6RLZj06"
+          }
+        },
+        "defines": {
+          "USE_TEXTURE": true,
+          "UV_CROSS_SEGMENT": true,
+          "UV_SHIFT_BY_TIME": true,
+          "USE_WORLD_POS": true
+        }
+      }
+    }
+  },
+  {
+    "__type__": "cc.Material",
+    "_name": "SplineDotPath",
+    "_effectAsset": {
+      "__uuid__": "82sWlBfilJN5twN9UxtelE"
+    },
+    "_techniqueData": {
+      "0": {
+        "props": {
+          "size": {
+            "__type__": "cc.Vec4",
+            "x": 15,
+            "y": 15,
+            "z": 1,
+            "w": 1
+          },
+          "texture": {
+            "__uuid__": "4faW0m04RLdo/s8evXPgdd"
+          }
+        },
+        "defines": {
+          "USE_TEXTURE": true,
+          "USE_WORLD_POS": true
+        }
+      }
+    }
+  }
+]
