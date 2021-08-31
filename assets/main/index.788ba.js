@@ -4250,13 +4250,13 @@ window.__require = function e(t, n, r) {
     Object.defineProperty(exports, "__esModule", {
       value: true
     });
-    exports.TestSDF = void 0;
+    exports.SceneSDF = void 0;
     var EDTAA3_1 = require("./EDTAA3");
     var EDT_1 = require("./EDT");
     var _a = cc._decorator, ccclass = _a.ccclass, menu = _a.menu, property = _a.property;
-    var TestSDF = function(_super) {
-      __extends(TestSDF, _super);
-      function TestSDF() {
+    var SceneSDF = function(_super) {
+      __extends(SceneSDF, _super);
+      function SceneSDF() {
         var _this = null !== _super && _super.apply(this, arguments) || this;
         _this.renderNodes = [];
         _this.objNode = null;
@@ -4271,22 +4271,22 @@ window.__require = function e(t, n, r) {
         _this._effectIndex = 1;
         return _this;
       }
-      TestSDF.prototype.onLoad = function() {
+      SceneSDF.prototype.onLoad = function() {
         var _a, _b;
         null === (_a = this.btnSwitchImage) || void 0 === _a ? void 0 : _a.on("click", this.NextImage, this);
         null === (_b = this.btnSwitchEffect) || void 0 === _b ? void 0 : _b.on("click", this.NextEffect, this);
       };
-      TestSDF.prototype.start = function() {
+      SceneSDF.prototype.start = function() {
         this._edt = new EDT_1.EDT();
         this._edtaa3 = new EDTAA3_1.EDTAA3();
         this.ApplyImage(this._imageIndex);
         this.ApplyEffect(this._effectIndex);
       };
-      TestSDF.prototype.NextImage = function() {
+      SceneSDF.prototype.NextImage = function() {
         var index = this._imageIndex = (this._imageIndex + 1) % this.images.length;
         this.ApplyImage(index);
       };
-      TestSDF.prototype.ApplyImage = function(index) {
+      SceneSDF.prototype.ApplyImage = function(index) {
         var sf = this.images[index];
         var sz = sf.getOriginalSize();
         this.objNode.getComponent(cc.Sprite).spriteFrame = sf;
@@ -4300,30 +4300,24 @@ window.__require = function e(t, n, r) {
           result = 0 === i ? this._edt.RenderSDF(texture, maxDist) : this._edtaa3.RenderSDF(texture, maxDist);
           var sprite = renderNode.getComponent(cc.Sprite);
           sprite.spriteFrame = new cc.SpriteFrame(result.texture);
-          this.FlushMatProperties(sprite, maxDist, cc.size(texture.width, texture.height), 1 === i && maxDist > 8);
+          this.FlushMatProperties(sprite, cc.size(texture.width, texture.height), 1 === i && maxDist > 8);
         }
       };
-      TestSDF.prototype.FlushMatProperties = function(sprite, sdfRadius, sz, useDualChannel) {
+      SceneSDF.prototype.FlushMatProperties = function(sprite, sz, useDualChannel) {
         var mat = sprite.getMaterial(0);
-        true;
         var tw = sprite.node.width;
         var th = sprite.node.height;
-        mat.setProperty("texSize", [ tw, th ]);
-        mat.setProperty("texStep", [ 1 / tw, 1 / th ]);
-        mat.setProperty("maxDist", this._maxDist);
+        mat.setProperty("texSize", [ tw, th, 1 / tw, 1 / th ]);
+        mat.setProperty("maxDist", [ this._maxDist, 1 / this._maxDist ]);
         mat.define("SDF_HI_RES", useDualChannel);
         mat.define("SDF_DUAL_CHANNEL", useDualChannel);
         void 0 !== mat.getProperty("originTexture") && mat.setProperty("originTexture", this.objNode.getComponent(cc.Sprite).spriteFrame.getTexture());
-        if (2 !== this._effectIndex) return;
-        mat.setProperty("yRatio", sz.height / sz.width);
-        mat.setProperty("sdfRatio", 2 * sdfRadius / sz.width);
-        mat.setProperty("outlineHalfWidth", 3 / sdfRadius);
       };
-      TestSDF.prototype.NextEffect = function() {
+      SceneSDF.prototype.NextEffect = function() {
         var index = this._effectIndex = (this._effectIndex + 1) % this.materials.length;
         this.ApplyEffect(index);
       };
-      TestSDF.prototype.ApplyEffect = function(index) {
+      SceneSDF.prototype.ApplyEffect = function(index) {
         this.UpdateHint(index);
         var mat = this.materials[index];
         for (var i = 0; i < 2; ++i) {
@@ -4332,12 +4326,11 @@ window.__require = function e(t, n, r) {
           sprite.setMaterial(0, mat);
           var sf = sprite.spriteFrame;
           var sz = sf.getOriginalSize();
-          var sdfRadius = Math.max(60, sz.height / 3);
           var maxDist = this._maxDist;
-          this.FlushMatProperties(sprite, sdfRadius, sz, 1 === i && maxDist > 8);
+          this.FlushMatProperties(sprite, sz, 1 === i && maxDist > 8);
         }
       };
-      TestSDF.prototype.RenderToMemory = function(root, others, target, extend) {
+      SceneSDF.prototype.RenderToMemory = function(root, others, target, extend) {
         void 0 === extend && (extend = 0);
         var node = new cc.Node();
         node.parent = root;
@@ -4390,22 +4383,22 @@ window.__require = function e(t, n, r) {
         }
         return target["__gt_texture"];
       };
-      TestSDF.prototype.UpdateHint = function(materialIndex) {
+      SceneSDF.prototype.UpdateHint = function(materialIndex) {
         var mat = this.materials[materialIndex];
         var hint = this._hints.get(mat.name) || "";
         this.lblHint.string = hint ? "\u5f53\u524d\u6548\u679c:\n " + hint : "";
       };
-      __decorate([ property([ cc.Node ]) ], TestSDF.prototype, "renderNodes", void 0);
-      __decorate([ property(cc.Node) ], TestSDF.prototype, "objNode", void 0);
-      __decorate([ property(cc.Node) ], TestSDF.prototype, "btnSwitchImage", void 0);
-      __decorate([ property(cc.Node) ], TestSDF.prototype, "btnSwitchEffect", void 0);
-      __decorate([ property([ cc.SpriteFrame ]) ], TestSDF.prototype, "images", void 0);
-      __decorate([ property([ cc.Material ]) ], TestSDF.prototype, "materials", void 0);
-      __decorate([ property(cc.Label) ], TestSDF.prototype, "lblHint", void 0);
-      TestSDF = __decorate([ ccclass ], TestSDF);
-      return TestSDF;
+      __decorate([ property([ cc.Node ]) ], SceneSDF.prototype, "renderNodes", void 0);
+      __decorate([ property(cc.Node) ], SceneSDF.prototype, "objNode", void 0);
+      __decorate([ property(cc.Node) ], SceneSDF.prototype, "btnSwitchImage", void 0);
+      __decorate([ property(cc.Node) ], SceneSDF.prototype, "btnSwitchEffect", void 0);
+      __decorate([ property([ cc.SpriteFrame ]) ], SceneSDF.prototype, "images", void 0);
+      __decorate([ property([ cc.Material ]) ], SceneSDF.prototype, "materials", void 0);
+      __decorate([ property(cc.Label) ], SceneSDF.prototype, "lblHint", void 0);
+      SceneSDF = __decorate([ ccclass ], SceneSDF);
+      return SceneSDF;
     }(cc.Component);
-    exports.TestSDF = TestSDF;
+    exports.SceneSDF = SceneSDF;
     cc._RF.pop();
   }, {
     "./EDT": "EDT",
